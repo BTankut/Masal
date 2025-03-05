@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggleTale = document.getElementById('theme-toggle-tale');
     const taleHistoryContainer = document.getElementById('tale-history-container');
     const returnToTaleBtn = document.getElementById('return-to-tale');
+    const audioPlayerContainer = document.getElementById('audio-player-container');
     
     let currentPage = 0;
     let taleData = null;
@@ -338,19 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         log('Masal geçmişe eklendi');
     }
     
-    // Önceki sayfa butonuna tıklama
-    prevPageButton.addEventListener('click', function() {
-        if (currentPage > 0) {
-            displayTalePage(currentPage - 1);
-        }
-    });
-    
-    // Sonraki sayfa butonuna tıklama
-    nextPageButton.addEventListener('click', function() {
-        if (taleData && taleData.tale_sections && currentPage < taleData.tale_sections.length - 1) {
-            displayTalePage(currentPage + 1);
-        }
-    });
+    // Sayfalama fonksiyonları kaldırıldı çünkü HTML'de ilgili butonlar bulunmuyor
+    // ve displayTalePage fonksiyonu tanımlanmamış
     
     // Yeni masal butonuna tıklama
     newTaleButton.addEventListener('click', function() {
@@ -404,39 +394,195 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.addEventListener('click', saveWord);
     
     // Sesli oku
+    // Ses çalma için global değişkenler
+    let audioPlayer = null;
+    let audioURL = null;
+    let isPlaying = false;
+    let audioProgressInterval = null;
+    
+    // Tüm ses çalar kontrollerini ayarla
+    function setupAudioPlayerControls() {
+        const playerContainer = document.getElementById('audio-player-container');
+        const playPauseBtn = document.getElementById('audio-play-pause');
+        const stopBtn = document.getElementById('audio-stop');
+        const restartBtn = document.getElementById('audio-restart');
+        const progressSlider = document.getElementById('audio-progress');
+        const speedSelect = document.getElementById('audio-speed');
+        
+        // Oynat/Duraklat butonuna tıklandığında
+        playPauseBtn.addEventListener('click', function() {
+            if (!audioPlayer) return;
+            
+            if (isPlaying) {
+                // Şu an çalıyorsa duraklat
+                audioPlayer.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                isPlaying = false;
+                clearInterval(audioProgressInterval);
+            } else {
+                // Şu an duraklatılmışsa oynat
+                audioPlayer.play().then(() => {
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    isPlaying = true;
+                    
+                    // İlerleme çubuğunu güncelle
+                    updateProgressBar();
+                }).catch(e => {
+                    log("Ses oynatma hatası", e);
+                    showError("Ses oynatma başlatılamadı: " + e.message);
+                });
+            }
+        });
+        
+        // Durdur butonuna tıklandığında
+        stopBtn.addEventListener('click', function() {
+            if (!audioPlayer) return;
+            
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            isPlaying = false;
+            clearInterval(audioProgressInterval);
+            progressSlider.value = 0;
+        });
+        
+        // Yeniden başlat butonuna tıklandığında
+        restartBtn.addEventListener('click', function() {
+            if (!audioPlayer) return;
+            
+            audioPlayer.currentTime = 0;
+            if (!isPlaying) {
+                audioPlayer.play().then(() => {
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    isPlaying = true;
+                    updateProgressBar();
+                }).catch(e => {
+                    log("Ses oynatma hatası", e);
+                });
+            }
+        });
+        
+        // İlerleme çubuğu değiştiğinde
+        progressSlider.addEventListener('input', function() {
+            if (!audioPlayer) return;
+            
+            const seekTime = (audioPlayer.duration * (progressSlider.value / 100)) || 0;
+            audioPlayer.currentTime = seekTime;
+        });
+        
+        // Hız değiştiğinde
+        speedSelect.addEventListener('change', function() {
+            if (!audioPlayer) return;
+            
+            audioPlayer.playbackRate = parseFloat(speedSelect.value);
+            log(`Oynatma hızı: ${speedSelect.value}x`);
+        });
+    }
+    
+    // İlerleme çubuğunu güncelleme
+    function updateProgressBar() {
+        const progressSlider = document.getElementById('audio-progress');
+        
+        if (audioProgressInterval) {
+            clearInterval(audioProgressInterval);
+        }
+        
+        audioProgressInterval = setInterval(function() {
+            if (audioPlayer && audioPlayer.duration) {
+                const percentage = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                progressSlider.value = percentage;
+            }
+        }, 100);
+    }
+    
+    // Sesli oku fonksiyonu - ana fonksiyon
     function readTaleAloud() {
-        if (!taleData || !taleData.tale_sections || !taleData.tale_sections[currentPage]) {
+        if (!taleData || !taleData.tale_text) {
             showError('Okunacak masal bulunamadı.');
             return;
         }
         
-        const text = taleData.tale_sections[currentPage];
-        showLoading(true);
+        const text = taleData.tale_text;
+        showLoading(true, "Ses dosyası oluşturuluyor...");
         
+        // Daha önce bir ses çalıyorsa durdur ve temizle
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer = null;
+        }
+        
+        if (audioURL) {
+            URL.revokeObjectURL(audioURL);
+            audioURL = null;
+        }
+        
+        // İsteği hazırla
         fetch('/generate_audio', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                text: text
-            }),
+            body: JSON.stringify({ text: text })
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Sunucu hatası: ' + response.status);
+                throw new Error(`Sunucu hatası: ${response.status}`);
             }
             return response.blob();
         })
         .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            audio.play();
-            showLoading(false);
+            log("Ses dosyası alındı, oynatılıyor...");
+            
+            // Audio elementini oluştur
+            audioURL = URL.createObjectURL(blob);
+            audioPlayer = new Audio(audioURL);
+            
+            // Ses çalar kontrol panelini göster
+            document.getElementById('audio-player-container').style.display = 'block';
+            
+            // Oynatma butonunu güncelle
+            document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-pause"></i>';
+            
+            // Durumları izle
+            audioPlayer.onplay = () => {
+                log("Ses çalmaya başladı");
+                isPlaying = true;
+                showLoading(false);
+            };
+            
+            audioPlayer.onpause = () => {
+                log("Ses duraklatıldı");
+                isPlaying = false;
+            };
+            
+            audioPlayer.onended = () => {
+                log("Ses çalma tamamlandı");
+                isPlaying = false;
+                document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-play"></i>';
+                clearInterval(audioProgressInterval);
+            };
+            
+            audioPlayer.onerror = (e) => {
+                log("Ses çalma hatası", e);
+                showError("Ses çalınamadı");
+                showLoading(false);
+                isPlaying = false;
+                URL.revokeObjectURL(audioURL);
+            };
+            
+            // Oynatmayı başlat
+            audioPlayer.play().catch(e => {
+                log("Ses oynatma hatası", e);
+                showError("Ses oynatma başlatılamadı: " + e.message);
+                showLoading(false);
+            });
+            
+            // İlerleme çubuğunu başlat
+            updateProgressBar();
         })
         .catch(error => {
-            log('Hata:', { error: error.message, stack: error.stack });
-            showError('Sesli okuma sırasında bir hata oluştu: ' + error.message);
+            log("Ses oluşturma hatası", error);
+            showError("Ses oluşturma hatası: " + error.message);
             showLoading(false);
         });
     }
@@ -511,7 +657,11 @@ document.addEventListener('DOMContentLoaded', function() {
         taleData = tale.data;
         currentPage = tale.currentPage || 0;
         
-        displayTalePage(currentPage);
+        // Masal sayfasını doğrudan göster (displayTalePage kullanılmıyor)
+        document.getElementById('tale-title').textContent = taleData.tale_title || "";
+        document.getElementById('tale-text').textContent = taleData.tale_text || "";
+        document.getElementById('tale-image').src = taleData.image_url || "static/img/default-tale.jpg";
+        
         showTalePage();
     }
     
@@ -565,6 +715,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         errorElement.style.display = 'none';
     }
+    
+    // Ses çalar kontrollerini ayarla
+    setupAudioPlayerControls();
     
     // Sayfa yüklendiğinde tema tercihini yükle
     loadSavedTheme();

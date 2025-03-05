@@ -1,150 +1,143 @@
-# Mila's Tale World - AI-Powered Storytelling Platform for Children
+# Masal - Yapay Zeka Destekli Çocuk Masalları Platformu
 
-![Mila's Tale World](static/images/logo.png)
+## Genel Bakış
 
-## Overview
+Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. Uygulama, kullanıcı tarafından belirlenen karakterler, ortamlar ve temalar doğrultusunda özgün ve eğitici masallar üretir, bu masalları görsellerle zenginleştirir ve sesli olarak çocuklara anlatır.
 
-Mila's Tale World is an innovative AI-powered storytelling application designed specifically for young children. The platform creates personalized, engaging stories based on user-defined themes, characters, and length preferences, while generating matching illustrations to bring these tales to life.
+## Özellikler
 
-## Features
+### Ana İşlevler
+- **Yapay Zeka ile Masal Üretimi**: OpenAI veya Google Gemini tarafından desteklenen çocuk dostu metinler
+- **Özgün Görseller**: DALL-E veya Gemini tarafından üretilen, masala özel illüstrasyonlar
+- **Sesli Anlatım**: Metinden sese dönüştürme ile masalın sesli anlatımı
+- **Ses Kontrolü**: Durdurma, devam ettirme, hız kontrolü ve ilerleme çubuğu
+- **Kolay Kayıt**: Masalları Word dosyası olarak kaydetme imkanı
 
-### Core Functionality
-- **AI-Powered Story Generation**: Creates unique, age-appropriate stories using advanced language models
-- **Custom Illustration Generation**: Produces matching illustrations for each story section
-- **Text-to-Speech Narration**: Reads stories aloud with natural voice synthesis
-- **Interactive Sound Effects**: Plays sound effects when clicking on highlighted keywords
-- **Multiple API Support**: Utilizes both Google Gemini AI and OpenAI DALL-E for content generation
+### Kullanıcı Deneyimi
+- **Çocuk Dostu Arayüz**: Kolay kullanılabilir, renkli ve sezgisel tasarım
+- **Tema Özelleştirme**: Aydınlık/Karanlık mod seçeneği
+- **Masal Geçmişi**: Son oluşturulan masalların kaydedilmesi
+- **Kelime Sayısı Kontrolü**: Kısa, orta veya uzun masal seçeneği
+- **Debug Modu**: Geliştirici odaklı test ve hata ayıklama özellikleri
 
-### User Experience
-- **Intuitive Interface**: Child-friendly design with easy navigation
-- **Theme Customization**: Light/Dark mode toggle for comfortable reading
-- **Story History**: Saves up to 5 recent stories for easy access
-- **Word Count Control**: Adjustable story length (short, medium, long)
-- **Export Options**: Save stories as Word documents
-
-## Technical Stack
+## Teknik Yapı
 
 ### Backend
 - **Framework**: Flask 2.3.3 (Python)
-- **AI Integration**:
-  - Google Gemini AI (text and image generation)
-  - OpenAI DALL-E (image generation)
-- **Audio Processing**: gTTS (Google Text-to-Speech)
-- **Document Generation**: python-docx
+- **AI Entegrasyonu**:
+  - Google Gemini (metin ve görsel üretimi)
+  - OpenAI GPT ve DALL-E (metin ve görsel üretimi)
+- **Ses İşleme**: gTTS (Google Text-to-Speech)
+- **Dokümantasyon**: python-docx
 
 ### Frontend
-- **Core Technologies**: HTML5, CSS3, Vanilla JavaScript
-- **UI Components**: Font Awesome icons, Google Fonts (Nunito, Dancing Script)
-- **Data Storage**: Browser localStorage for theme preferences and story history
+- **Teknolojiler**: HTML5, CSS3, JavaScript
+- **UI Bileşenleri**: Font Awesome, Google Fonts
+- **Veri Saklama**: Browser localStorage (tema tercihleri ve masal geçmişi)
 
-## Installation
+## Kurulum
 
-1. Clone the repository:
+1. Depoyu klonlayın:
 ```bash
-git clone https://github.com/BTankut/milas-tale-world.git
-cd milas-tale-world
+git clone https://github.com/yourusername/masal.git
+cd masal
 ```
 
-2. Install required Python packages:
+2. Gerekli Python paketlerini yükleyin:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the project root and add your API keys:
+3. Proje kök dizininde bir `.env` dosyası oluşturun ve API anahtarlarınızı ekleyin:
 ```
 GOOGLE_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-4. Ensure sound effects are available in the `static/sounds/` directory.
+4. Ses efektlerini indirin (isteğe bağlı):
+```bash
+python download_sounds.py
+```
 
-## Usage
+## Kullanım
 
-1. Start the application:
+1. Uygulamayı başlatın:
 ```bash
 python app.py
 ```
 
-2. Open your browser and navigate to `http://127.0.0.1:5000`
+2. Tarayıcınızı açın ve `http://localhost:8500` adresine gidin
 
-3. Enter your story preferences:
-   - Theme (e.g., forest, space, ocean)
-   - Characters (e.g., lion, princess, robot)
-   - Word count (100, 200, or 300 words)
-   - Image generation API (Gemini or DALL-E)
+3. Masal tercihlerinizi girin:
+   - Karakter Adı (örn. Mila, Ayşe, Ali)
+   - Karakter Türü (örn. prenses, kahraman, gezgin)
+   - Masal Ortamı (örn. orman, uzay, deniz)
+   - Masal Teması (örn. dostluk, macera, keşif)
+   - Kelime Sayısı (100, 200 veya 300 kelime)
+   - Kullanılacak API'ler (Gemini veya OpenAI)
 
-4. Click "Generate Story" and wait for the AI to create your personalized tale
+4. "Masal Oluştur" düğmesine tıklayın ve yapay zekanın masalınızı oluşturmasını bekleyin
 
-5. Explore your story:
-   - Navigate through pages using the arrow buttons
-   - Listen to the story with the audio playback feature
-   - Click on highlighted words to trigger sound effects
-   - Save the story as a Word document
-   - Return to the settings page to create a new story
+5. Masalı keşfedin:
+   - Metni okuyun ve görseli inceleyin
+   - Sesli anlatımı dinleyin ve ses kontrollerini kullanın
+   - Masalı Word olarak kaydedin
+   - Yeni masal oluşturmak için ayarlar sayfasına dönün
 
-## Development Guide
+## Geliştirme Kılavuzu
 
-### Project Structure
+### Proje Yapısı
 ```
-milas-tale-world/
-├── app.py                 # Main Flask application
-├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables (API keys)
+masal/
+├── app.py                 # Ana Flask uygulaması
+├── download_sounds.py     # Ses efektlerini indirme betiği  
+├── requirements.txt       # Python bağımlılıkları
+├── CLAUDE.md              # Geliştirici notları
+├── test_gemini.py         # Gemini API test dosyası
+├── test_openai.py         # OpenAI API test dosyası
 ├── static/
 │   ├── css/
-│   │   └── style.css      # Application styling
+│   │   └── style.css      # Uygulama stil dosyası
 │   ├── js/
-│   │   └── main.js        # Frontend functionality
-│   ├── sounds/            # Sound effect files
-│   └── images/            # Static images and generated illustrations
+│   │   └── main.js        # Frontend fonksiyonları
+│   ├── sounds/            # Ses efekti dosyaları
+│   └── img/               # Statik görseller
 └── templates/
-    └── index.html         # Main application template
+    └── index.html         # Ana uygulama şablonu
 ```
 
-### Adding New Features
+### Test
 
-#### Sound Effects
-1. Add new MP3 files to the `static/sounds/` directory
-2. Update the `identify_sound_effect_keywords` function in `app.py` to include new keywords
-
-#### API Integration
-The application supports multiple AI providers:
-- For text generation: Google Gemini AI
-- For image generation: Both Google Gemini AI and OpenAI DALL-E
-
-### Testing
-
-To test the API connections:
+API bağlantılarını test etmek için:
 ```bash
-python test_openai.py  # Test OpenAI connection
-python test_gemini.py  # Test Gemini connection
+python test_openai.py  # OpenAI bağlantısını test et
+python test_gemini.py  # Gemini bağlantısını test et
 ```
 
-## Performance Considerations
+### Debug Modu
 
-- **API Usage**: Be mindful of API rate limits and costs
-- **Image Generation**: Image creation may take several seconds
-- **Browser Storage**: Story history is limited to 5 entries to prevent excessive local storage usage
+Tarayıcıda hata ayıklama konsolunu açmak için:
+- `Alt+D` tuş kombinasyonunu kullanın
+- Konsolda yapılan işlemleri ve hataları görebilirsiniz
 
-## Future Enhancements
+## Performans Hususları
 
-- Multi-language support
-- Additional illustration styles
-- User accounts for cloud-based story storage
-- More interactive elements within stories
-- Mobile application version
+- **API Kullanımı**: API sınırlamalarına ve maliyetlerine dikkat edin
+- **Görsel Oluşturma**: Görsel oluşturma işlemi birkaç saniye sürebilir
+- **Tarayıcı Depolama**: Masal geçmişi maksimum 10 giriş ile sınırlıdır
 
-## License
+## Gelecek Geliştirmeler
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Çoklu dil desteği
+- Ek illüstrasyon stilleri
+- Kullanıcı hesapları ve bulut tabanlı masal depolama
+- Masallar içinde daha fazla etkileşimli unsur
+- Mobil uygulama versiyonu
 
-## Acknowledgments
+## Lisans
 
-- Google Gemini AI for text generation capabilities
-- OpenAI for DALL-E image generation
-- The Flask team for the web framework
-- All contributors to this project
+Bu proje MIT Lisansı altında lisanslanmıştır - detaylar için LICENSE dosyasına bakın.
 
 ---
 
-Developed with ❤️ for young storytellers everywhere.
+Genç hikaye anlatıcıları için ❤️ ile geliştirilmiştir.

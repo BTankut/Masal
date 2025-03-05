@@ -66,6 +66,14 @@
                         </select>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="text-api">Metin Oluşturma API'si:</label>
+                        <select id="text-api" name="text_api" required>
+                            <option value="openai" selected>OpenAI (GPT)</option>
+                            <option value="gemini">Gemini</option>
+                        </select>
+                    </div>
+                    
                     <button type="submit" id="generate-button" class="btn btn-primary btn-icon">
                         <i class="fas fa-magic"></i>
                         Masal Oluştur
@@ -103,6 +111,32 @@
                     <div id="tale-text" class="tale-text"></div>
                     <div class="tale-image">
                         <img id="tale-image" src="" alt="Masal Görseli">
+                    </div>
+                </div>
+                
+                <div id="audio-player-container" class="audio-player-container" style="display: none;">
+                    <div class="audio-controls">
+                        <button id="audio-play-pause" class="audio-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button id="audio-stop" class="audio-btn">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                        <button id="audio-restart" class="audio-btn">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <div class="audio-slider-container">
+                            <input type="range" id="audio-progress" min="0" max="100" value="0" class="audio-slider">
+                        </div>
+                        <div class="audio-speed-container">
+                            <select id="audio-speed" class="audio-speed-select">
+                                <option value="0.75">0.75x</option>
+                                <option value="1" selected>1x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 

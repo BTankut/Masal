@@ -5,7 +5,7 @@ import sys
 import traceback
 import json
 import logging
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -49,13 +49,19 @@ else:
     logger.warning("UYARI: OpenAI API anahtarı bulunamadı. DALL-E görsel oluşturma devre dışı.")
 
 app = Flask(__name__)
-CORS(app)  # CORS desteği ekle
+# Tüm kaynaklardan gelen isteklere izin ver
+CORS(app, resources={r"/*": {"origins": "*"}})
 logger.info("Flask uygulaması ve CORS yapılandırıldı.")
 
 @app.route('/')
 def index():
     logger.debug("Ana sayfa isteği alındı.")
-    return render_template('index.html')
+    response = make_response(render_template('index.html'))
+    # Önbelleği devre dışı bırak
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 @app.route('/generate_tale', methods=['POST'])
 def generate_tale():
@@ -81,6 +87,7 @@ def generate_tale():
             theme = data.get('theme', '')
             word_limit = int(data.get('word_limit', 200))
             image_api = data.get('image_api', 'dalle')
+            text_api = data.get('text_api', 'openai')
         else:
             # Form verilerini al
             character_name = request.form.get('character_name', '')
@@ -88,7 +95,7 @@ def generate_tale():
             setting = request.form.get('setting', '')
             theme = request.form.get('theme', '')
             
-            # word_limit ve image_api değerleri için hata kontrolü
+            # word_limit ve api değerleri için hata kontrolü
             try:
                 word_limit = int(request.form.get('word_limit', 200))
             except ValueError:
@@ -96,8 +103,9 @@ def generate_tale():
                 word_limit = 200
                 
             image_api = request.form.get('image_api', 'dalle')
+            text_api = request.form.get('text_api', 'openai')
         
-        logger.info(f"Alınan form verileri: Karakter Adı: {character_name}, Karakter Türü: {character_type}, Ortam: {setting}, Tema: {theme}, Kelime Sayısı: {word_limit}, Görsel API: {image_api}")
+        logger.info(f"Alınan form verileri: Karakter Adı: {character_name}, Karakter Türü: {character_type}, Ortam: {setting}, Tema: {theme}, Kelime Sayısı: {word_limit}, Görsel API: {image_api}, Metin API: {text_api}")
         
         # Veri doğrulama
         if not character_name or not character_type or not setting or not theme:
@@ -106,7 +114,7 @@ def generate_tale():
         
         # Masal oluşturma
         logger.info("Masal metni oluşturuluyor...")
-        tale_text = generate_tale_text(character_name, character_type, setting, theme, word_limit)
+        tale_text = generate_tale_text(character_name, character_type, setting, theme, word_limit, text_api)
         
         # Başlık oluştur
         tale_title = f"{character_name}'nin {setting} Macerası"
@@ -168,8 +176,8 @@ def generate_audio():
         # Ses dosyası oluştur
         audio_path = create_audio(text)
         
-        # Ses dosyasını gönder
-        return send_file(audio_path, as_attachment=True, download_name='masal.mp3')
+        # Ses dosyasını gönder - mimetype belirtiyoruz ve attachment olarak değil normal dosya olarak gönderiyoruz
+        return send_file(audio_path, mimetype='audio/mpeg', as_attachment=False)
     except Exception as e:
         logger.error(f"Ses oluşturma hatası: {str(e)}")
         logger.error(traceback.format_exc())
@@ -215,15 +223,16 @@ def create_word_document(tale_text, images):
         raise
 
 def create_audio(text):
-    """Metinden ses dosyası oluşturur"""
+    """Metinden ses dosyası oluşturur - basitleştirilmiş, pydub gerektirmeyen sürüm"""
     try:
         # Geçici ses dosyası oluştur
         with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as f:
             audio_path = f.name
         
-        # Metni sese dönüştür
+        # Metni sese dönüştür - uzun metinler için gTTS kendi içinde parçalama yapıyor
         tts = gTTS(text=text, lang='tr', slow=False)
         tts.save(audio_path)
+        logger.info(f"Ses dosyası oluşturuldu: {audio_path}")
         
         return audio_path
     except Exception as e:
@@ -231,10 +240,18 @@ def create_audio(text):
         logger.error(traceback.format_exc())
         raise
 
-def generate_tale_text(character_name, character_type, setting, theme, word_limit):
-    """Gemini API kullanarak masal metni oluşturur"""
+def generate_tale_text(character_name, character_type, setting, theme, word_limit, text_api='openai'):
+    """Gemini API veya OpenAI API kullanarak masal metni oluşturur"""
     try:
-        # Güncel model adı formatı
+        # Kullanıcı seçimine göre API kullan
+        if text_api == 'openai' and openai_client:
+            try:
+                return generate_tale_text_with_openai(character_name, character_type, setting, theme, word_limit)
+            except Exception as e:
+                logger.warning(f"OpenAI ile masal metni oluşturulamadı, Gemini denenecek: {str(e)}")
+                # OpenAI ile başarısız olursa Gemini'ye devam et
+        
+        # Gemini API ile devam et
         logger.info("Gemini API ile masal metni oluşturuluyor...")
         
         # Desteklenen modelleri listele
@@ -257,7 +274,11 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
                     model = genai.GenerativeModel("gemini-pro")
                 except Exception as e3:
                     logger.error(f"Hiçbir Gemini modeli yüklenemedi: {str(e3)}")
-                    raise ValueError("Gemini API modeli başlatılamadı")
+                    if not openai_client:
+                        raise ValueError("Hem Gemini hem de OpenAI API kullanılamıyor. Lütfen API anahtarlarını kontrol edin.")
+                    else:
+                        # Buraya düşerse, OpenAI zaten denenmiş ve başarısız olmuş demektir
+                        raise ValueError("Metin oluşturma için hiçbir API kullanılamıyor.")
         
         prompt = f"""
         Çocuklar için {word_limit} kelimelik bir masal yaz. Masal şu özelliklere sahip olmalı:
@@ -284,6 +305,46 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         logger.error(f"Masal metni oluşturulurken hata: {str(e)}")
         logger.error(traceback.format_exc())
         return f"Masal oluşturulamadı. Hata: {str(e)}"
+        
+def generate_tale_text_with_openai(character_name, character_type, setting, theme, word_limit):
+    """OpenAI API kullanarak masal metni oluşturur"""
+    logger.info("OpenAI API ile masal metni oluşturuluyor...")
+    
+    prompt = f"""
+    Çocuklar için {word_limit} kelimelik bir masal yaz. Masal şu özelliklere sahip olmalı:
+    - Ana karakter: {character_name} adında bir {character_type}
+    - Ortam: {setting}
+    - Tema: {theme}
+    - Masal eğitici ve çocuk dostu olmalı
+    - Karmaşık kelimeler kullanma, 7-10 yaş arası çocukların anlayabileceği dilde olsun
+    - Türkçe olarak yaz
+    - Sadece masal metnini döndür, başlık veya açıklama ekleme
+    """
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Sen çocuklar için masal yazan bir yazarsın. Eğitici, eğlenceli ve çocuk dostu masallar yazarsın."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=word_limit * 5,  # Yaklaşık olarak kelime sayısı x 5 token
+            temperature=0.7
+        )
+        
+        tale_text = response.choices[0].message.content.strip()
+        
+        # Kelime sayısı kontrolü
+        words = tale_text.split()
+        if len(words) > word_limit * 1.2:  # %20 tolerans
+            tale_text = ' '.join(words[:word_limit])
+        
+        return tale_text
+        
+    except Exception as e:
+        logger.error(f"OpenAI ile masal metni oluşturulurken hata: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise
 
 def split_text_into_sections(text, words_per_section):
     """Metni belirli kelime sayısına göre bölümlere ayırır"""
@@ -422,4 +483,4 @@ def identify_sound_effect_keywords(text):
     return found_effects
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8500, debug=True)
