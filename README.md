@@ -15,8 +15,9 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 
 ### Kullanıcı Deneyimi
 - **Çocuk Dostu Arayüz**: Kolay kullanılabilir, renkli ve sezgisel tasarım
+- **Sayfalama Sistemi**: Masalları sayfalara bölme ve kolay navigasyon
+- **Sayfa Başına Görsel**: Her sayfa için ayrı, içeriğe özel görseller
 - **Tema Özelleştirme**: Aydınlık/Karanlık mod seçeneği
-- **Masal Geçmişi**: Son oluşturulan masalların kaydedilmesi
 - **Kelime Sayısı Kontrolü**: Kısa, orta veya uzun masal seçeneği
 - **Debug Modu**: Geliştirici odaklı test ve hata ayıklama özellikleri
 
@@ -73,13 +74,14 @@ python app.py
    - Karakter Türü (örn. prenses, kahraman, gezgin)
    - Masal Ortamı (örn. orman, uzay, deniz)
    - Masal Teması (örn. dostluk, macera, keşif)
-   - Kelime Sayısı (100, 200 veya 300 kelime)
-   - Kullanılacak API'ler (Gemini veya OpenAI)
+   - Kelime Sayısı (200 veya 500 kelime)
+   - Kullanılacak API'ler (Gemini veya OpenAI, hem metin hem görsel için)
 
 4. "Masal Oluştur" düğmesine tıklayın ve yapay zekanın masalınızı oluşturmasını bekleyin
 
 5. Masalı keşfedin:
-   - Metni okuyun ve görseli inceleyin
+   - Sayfa geçiş düğmeleriyle hikayede ilerleyin
+   - Her sayfadaki özel görselleri inceleyin
    - Sesli anlatımı dinleyin ve ses kontrollerini kullanın
    - Masalı Word olarak kaydedin
    - Yeni masal oluşturmak için ayarlar sayfasına dönün
@@ -89,21 +91,22 @@ python app.py
 ### Proje Yapısı
 ```
 masal/
-├── app.py                 # Ana Flask uygulaması
-├── download_sounds.py     # Ses efektlerini indirme betiği  
-├── requirements.txt       # Python bağımlılıkları
-├── CLAUDE.md              # Geliştirici notları
-├── test_gemini.py         # Gemini API test dosyası
-├── test_openai.py         # OpenAI API test dosyası
+├── app.py                  # Ana Flask uygulaması
+├── download_sounds.py      # Ses efektlerini indirme betiği  
+├── requirements.txt        # Python bağımlılıkları
+├── CLAUDE.md               # Geliştirici kılavuzu ve notlar
+├── test_gemini.py          # Gemini API test dosyası
+├── test_openai.py          # OpenAI API test dosyası
+├── test_prompt_length.py   # Prompt formülü test aracı
 ├── static/
 │   ├── css/
-│   │   └── style.css      # Uygulama stil dosyası
+│   │   └── style.css       # Uygulama stil dosyası
 │   ├── js/
-│   │   └── main.js        # Frontend fonksiyonları
-│   ├── sounds/            # Ses efekti dosyaları
-│   └── img/               # Statik görseller
+│   │   └── main.js         # Frontend fonksiyonları
+│   ├── sounds/             # Ses efekti dosyaları
+│   └── img/                # Statik görseller ve üretilen resimler
 └── templates/
-    └── index.html         # Ana uygulama şablonu
+    └── index.html          # Ana uygulama şablonu
 ```
 
 ### Test
@@ -112,6 +115,11 @@ API bağlantılarını test etmek için:
 ```bash
 python test_openai.py  # OpenAI bağlantısını test et
 python test_gemini.py  # Gemini bağlantısını test et
+```
+
+Prompt formüllerini test etmek için:
+```bash
+python test_prompt_length.py --counts 200 500 --api both  # Her iki API için belirli kelime sayılarını test et
 ```
 
 ### Debug Modu
@@ -123,13 +131,18 @@ Tarayıcıda hata ayıklama konsolunu açmak için:
 ## Performans Hususları
 
 - **API Kullanımı**: API sınırlamalarına ve maliyetlerine dikkat edin
-- **Görsel Oluşturma**: Görsel oluşturma işlemi birkaç saniye sürebilir
+  - DALL-E: Dakikada 5 görsel istek limiti
+  - OpenAI token limiti: 4096 tokens
+- **Görsel Oluşturma**: Sayfa görsellerinin oluşturulması için 5-15 saniye bekleyin
+- **Kelime Sayısı**: AI modelleri tam kelime sayısını üretmekte zorlanabilir (%25-40 sapma olabilir)
 - **Tarayıcı Depolama**: Masal geçmişi maksimum 10 giriş ile sınırlıdır
 
 ## Gelecek Geliştirmeler
 
+- Daha doğru kelime sayısı üretimi için prompt optimizasyonu
 - Çoklu dil desteği
-- Ek illüstrasyon stilleri
+- Kelime sayacı algoritması iyileştirmeleri
+- Ek illüstrasyon stilleri ve görsel stillendirme
 - Kullanıcı hesapları ve bulut tabanlı masal depolama
 - Masallar içinde daha fazla etkileşimli unsur
 - Mobil uygulama versiyonu
