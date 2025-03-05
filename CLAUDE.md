@@ -1,32 +1,82 @@
 # Masal Uygulaması - Geliştirici Kılavuzu
 
-## Komutlar
-- Uygulamayı çalıştırma: `python app.py` (Adres: http://localhost:8500)
-- Port değiştirme: `python app.py --port=XXXX`
-- API testleri: `python test_gemini.py` veya `python test_openai.py`
-- Bağımlılıkları yükleme: `pip install -r requirements.txt`
-- Ses dosyalarını indirme: `python download_sounds.py`
-- Uygulamayı durdurma: Terminalde `Ctrl+C`
-- Debug log'u: `app.log` ve `app_debug.log` dosyalarına bakın
-- Tarayıcı debug modu: `Alt+D` tuş kombinasyonu (tarayıcı arayüzünde)
+## Uygulama Özellikleri
 
-## Geliştirme Standartları
-- **İsimlendirme**: snake_case (dosya/fonksiyon/değişken), PascalCase (sınıflar)
-- **Yazım**: 4 boşluk girinti, max 120 karakter satır uzunluğu
-- **İçe aktarma düzeni**: 
-  1. Standart kütüphane (os, sys, json)
-  2. Üçüncü parti paketler (Flask, requests, openai)
-  3. Yerel modüller
-- **Dokümantasyon**: Tüm fonksiyon/sınıflar için docstring kullanın: """Fonksiyon açıklaması"""
-- **Hata yönetimi**: try/except içinde spesifik exception'lar yakalayın, `logger.error/debug/info` kullanın
-- **API anahtarları**: Sadece .env dosyasında saklanmalı, kod içine gömülmemeli
-- **Frontend**: JS dosyalarını modüler tutun, debug için `window.log()` kullanın
-- **Test**: Yeni işlevler eklerken test_*.py dosyalarıyla test edin
+### Ana Özellikler
+- AI destekli çocuk masalı üretimi (OpenAI ve Gemini)
+- Parametrik hikaye oluşturma (karakter, ortam, tema)
+- DALL-E ve Gemini ile otomatik görsel oluşturma
+- Sayfa düzeninde metin ve görsel görüntüleme
+- Hikaye sesli okuma ve ses efektleri
+- Hikayeyi Word belgesi olarak kaydetme
+
+### Sayfalama Sistemi
+- Her sayfada 50 kelime gösteriliyor
+- Her sayfa için özel görsel oluşturuluyor
+- Sayfa navigasyon butonları (ileri, geri)
+
+## Çalıştırma & Test Komutları
+- Başlat: `python app.py` (http://localhost:8500)
+- Özel port: `python app.py --port=XXXX`
+- Yeniden başlat: `pkill -f "python app.py" && python app.py`
+- Prompt testi: `python test_prompt_length.py --counts 200 500 --api both`
+- API testleri: `python test_gemini.py` veya `python test_openai.py`
+- Ses dosyaları: `python download_sounds.py`
+- Log dosyaları: `app.log` ve `app_debug.log`
+- Debug modu: Tarayıcıda `Alt+D`
+
+## Kod Standartları
+- **İsimlendirme**: snake_case (dosya/fonk/değişken), PascalCase (sınıflar)
+- **Format**: 4 boşluk, max 120 karakter/satır
+- **İmport Sırası**: 1)std lib 2)3rd party 3)local modules
+- **Dokümantasyon**: Tüm fonksiyon/sınıflar için docstring
+- **Hatalar**: Spesifik except, `logger.error/debug/info` kullan
+- **Güvenlik**: API anahtarları sadece .env dosyasında
+- **Frontend**: Modüler JS, responsive design, `window.log()`
+- **AI İçerik**: Daima çocuk dostu ve yaşa uygun
+- **API Limitleri**: `max_tokens` değerlerinde OpenAI sınırını aşmamaya dikkat et (4096)
+
+## AI Prompt Optimizasyonu
+- **En İyi Prompt Stili**: 
+  ```
+  GÖREV: Tam olarak X kelimeden oluşan bir çocuk masalı yaz.
+
+  ÖNEMLİ TALİMATLAR:
+  1. Hikaye TAM OLARAK X kelime içermeli
+  2. Hikaye şunları içermeli:
+     - Ana karakter: {karakter_adı} adında bir {karakter_türü}
+     - Ortam: {ortam}
+     - Tema: {tema}
+  3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
+  4. Basit Türkçe kullan
+  5. Kelime sayımını üç kez kontrol et
+  6. Başlık EKLEME
+  7. Ne bir kelime fazla, ne bir kelime eksik olmalı
+  ```
+- **Yeniden Deneme Stratejisi**: Kelime sayısı çok az olduğunda daha katı uyarılarla tekrar dene
+- **API Token Limitleri**: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
 
 ## Proje Yapısı
-- `app.py`: Ana uygulama dosyası (Flask server)
-- `static/`: CSS, JS ve medya dosyaları
+- `app.py`: Ana Flask sunucusu ve AI entegrasyonu
+- `static/`: Frontend varlıkları (CSS, JS, ses/görüntüler)
 - `templates/`: HTML şablonları
-- `test_*.py`: API test dosyaları
+- `test_prompt_length.py`: Kelime sayısı prompt testleri
+- `test_gemini.py`, `test_openai.py`: API test modülleri
+- `download_sounds.py`: Ses dosyalarını indirme scripti
 
-Masal, çocuklar için yapay zeka destekli bir masal oluşturma platformudur. Tüm içerik çocuk dostu ve eğitici olmalıdır.
+## Araştırma Bulguları
+- **Kelime Doğruluğu**: 
+  - OpenAI ve Gemini, istenen kelime sayısının genellikle %25-40 altında metin üretiyor
+  - En iyi prompt (OpenAI): "GÖREV+ÖNEMLİ TALİMATLAR" formatı (%25 sapma)
+  - En iyi prompt (Gemini): Sistem+kullanıcı kombinasyonu (%30 sapma)
+  - Kesin sayıları vurgulamak için rakamsal ve yazıyla ifade etkili
+
+- **Görsel Üretimi**:
+  - DALL-E (OpenAI): Daha tutarlı, sanatsal görseller
+  - Gemini: Daha hızlı ama daha az tutarlı
+  - API sınırı: DALL-E için dakikada 5 istek limiti
+
+- **Uygulama Yapısı**:
+  - Sayfalama: 50 kelime/sayfa optimum
+  - Görsel-metin paralelliği: 450px yükseklikte containerlar
+  - Word belgesi oluşturma: Görsel-metin bütünlüğü

@@ -79,9 +79,10 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
+    width: 98%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 10px;
 }
 
 h1, h2, h3 {
@@ -150,10 +151,10 @@ input:focus, select:focus, textarea:focus {
 
 .btn {
     display: inline-block;
-    padding: 12px 20px;
+    padding: 10px 16px;
     border: none;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
@@ -336,7 +337,8 @@ input:focus, select:focus, textarea:focus {
 
 /* Masal Sayfası */
 .tale-container {
-    max-width: 900px;
+    max-width: 1200px;
+    width: 95%;
     margin: 0 auto;
     padding: 20px;
     background-color: var(--bg-secondary);
@@ -357,33 +359,43 @@ input:focus, select:focus, textarea:focus {
     display: flex;
     flex-direction: column;
     gap: 30px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    align-items: stretch;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .tale-text {
-    font-size: 1.2rem;
-    line-height: 1.8;
+    font-size: 1.4rem;
+    line-height: 1.4;
     color: var(--text-primary);
     background-color: var(--bg-primary);
     padding: 25px;
     border-radius: 10px;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
     text-align: justify;
+    min-height: 450px;
+    max-height: 450px;
+    overflow-y: auto;
+    margin-bottom: 0;
 }
 
 .tale-image {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 20px 0;
+    margin: 0;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    min-height: 450px;
+    max-height: 450px;
 }
 
 .tale-image img {
-    max-width: 100%;
-    max-height: 500px;
+    width: 100%;
+    height: 450px;
+    object-fit: cover;
     border-radius: 10px;
     transition: transform 0.3s ease;
 }
@@ -397,22 +409,29 @@ input:focus, select:focus, textarea:focus {
     justify-content: center;
     gap: 15px;
     flex-wrap: wrap;
-    margin-top: 20px;
+    margin-top: 10px;
+    opacity: 0.9;
 }
 
 @media (min-width: 768px) {
     .tale-content {
         flex-direction: row;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 30px;
     }
     
     .tale-text {
-        flex: 3;
+        flex: 1;
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        width: 50%;
     }
     
     .tale-image {
-        flex: 2;
+        flex: 1;
         margin: 0;
+        width: 50%;
     }
 }
 
@@ -437,35 +456,47 @@ input:focus, select:focus, textarea:focus {
     justify-content: center;
     align-items: center;
     gap: 15px;
-    margin: 20px 0;
+    margin: 15px 0;
+    padding: 10px 0;
+    background-color: var(--bg-primary);
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .page-indicator {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: 600;
+    padding: 0 15px;
 }
 
 .nav-btn {
     background-color: var(--nav-btn-bg);
     border: none;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 2px 5px var(--shadow-color);
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    font-size: 20px;
 }
 
 .nav-btn:hover {
     background-color: var(--nav-btn-hover);
+    transform: scale(1.1);
 }
 
 .nav-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
 }
 
 .sound-effect {

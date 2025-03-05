@@ -120,9 +120,20 @@ def generate_tale():
         tale_title = f"{character_name}'nin {setting} Macerası"
         logger.info(f"Masal başlığı oluşturuldu: {tale_title}")
         
-        # Görsel oluştur
-        logger.info(f"{image_api} API kullanarak görsel oluşturuluyor...")
-        image_prompt = f"{character_name} adlı {character_type} karakteri {setting} ortamında, {theme} temalı bir masal için çocuk kitabı tarzında illüstrasyon"
+        # İlk sayfa için görsel oluştur
+        logger.info(f"{image_api} API kullanarak ilk sayfa görseli oluşturuluyor...")
+        
+        # Masalı bölümlere ayır
+        sections = split_text_into_sections(tale_text, 50)
+        if sections:
+            first_section = sections[0]
+            # İlk sayfa için özel prompt oluştur
+            image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} karakteri {setting} ortamında: {first_section}"
+        else:
+            # Bölüm yoksa genel bir prompt kullan
+            image_prompt = f"{character_name} adlı {character_type} karakteri {setting} ortamında, {theme} temalı bir masal için çocuk kitabı tarzında illüstrasyon"
+        
+        # Görseli oluştur
         image_data = generate_image_for_section(image_prompt, image_api)
         
         # Görsel oluşturma başarı/başarısızlık durumunu logla
@@ -180,6 +191,43 @@ def generate_audio():
         return send_file(audio_path, mimetype='audio/mpeg', as_attachment=False)
     except Exception as e:
         logger.error(f"Ses oluşturma hatası: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/generate_page_image', methods=['POST'])
+def generate_page_image():
+    try:
+        data = request.json
+        page_text = data.get('page_text', '')
+        character_name = data.get('character_name', '')
+        character_type = data.get('character_type', '')
+        setting = data.get('setting', '')
+        page_number = data.get('page_number', 1)
+        image_api = data.get('image_api', 'dalle')
+        
+        logger.info(f"Sayfa {page_number} için görsel isteği alındı")
+        
+        # Görsel oluşturma promptu hazırla
+        image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} karakteri {setting} ortamında: {page_text}"
+        logger.info(f"Oluşturulan prompt: {image_prompt[:100]}...")
+        
+        # Görseli oluştur
+        image_data = generate_image_for_section(image_prompt, image_api)
+        
+        if not image_data:
+            logger.warning(f"Sayfa {page_number} için görsel oluşturulamadı")
+            return jsonify({"error": "Görsel oluşturulamadı"}), 500
+        
+        logger.info(f"Sayfa {page_number} için görsel başarıyla oluşturuldu")
+        
+        # Base64 verisi olarak dön
+        return jsonify({
+            "image_data": image_data,
+            "image_url": f"data:image/jpeg;base64,{image_data}"
+        })
+        
+    except Exception as e:
+        logger.error(f"Sayfa görseli oluşturma hatası: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
@@ -281,14 +329,21 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
                         raise ValueError("Metin oluşturma için hiçbir API kullanılamıyor.")
         
         prompt = f"""
-        Çocuklar için {word_limit} kelimelik bir masal yaz. Masal şu özelliklere sahip olmalı:
-        - Ana karakter: {character_name} adında bir {character_type}
-        - Ortam: {setting}
-        - Tema: {theme}
-        - Masal eğitici ve çocuk dostu olmalı
-        - Karmaşık kelimeler kullanma, 7-10 yaş arası çocukların anlayabileceği dilde olsun
-        - Türkçe olarak yaz
-        - Sadece masal metnini döndür, başlık veya açıklama ekleme
+        GÖREV: Tam olarak {word_limit} kelimeden oluşan bir çocuk masalı yaz.
+
+        ÖNEMLİ TALİMATLAR:
+        1. Hikaye TAM OLARAK {word_limit} kelime içermeli
+        2. Hikaye şunları içermeli:
+           - Ana karakter: {character_name} adında bir {character_type}
+           - Ortam: {setting}
+           - Tema: {theme}
+        3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
+        4. Basit Türkçe kullan
+        5. Kelime sayımını üç kez kontrol et
+        6. Başlık EKLEME
+        7. Ne bir kelime fazla, ne bir kelime eksik olmalı
+
+        Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {word_limit} kelimedir" gibi ifadeler kullanma).
         """
         
         response = model.generate_content(prompt)
@@ -296,8 +351,17 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         
         # Kelime sayısı kontrolü
         words = tale_text.split()
-        if len(words) > word_limit * 1.2:  # %20 tolerans
+        word_count = len(words)
+        logger.info(f"Model tarafından üretilen kelime sayısı: {word_count}")
+        
+        if word_count > word_limit * 1.2:  # %20 tolerans
+            logger.info(f"Kelime sayısı fazla, {word_limit} kelimeye kısaltılıyor...")
             tale_text = ' '.join(words[:word_limit])
+        elif word_count < word_limit * 0.8:  # Kelime sayısı %20'den fazla az ise
+            logger.warning(f"Kelime sayısı çok az ({word_count}), istenen: {word_limit}. Yeniden deneniyor...")
+            
+            # Gemini API için yeniden denemeye gerek yok, diğer kısımda retry eklemiştik
+            # Bu durumda sadece log bırakıyoruz
         
         return tale_text
     
@@ -311,14 +375,21 @@ def generate_tale_text_with_openai(character_name, character_type, setting, them
     logger.info("OpenAI API ile masal metni oluşturuluyor...")
     
     prompt = f"""
-    Çocuklar için {word_limit} kelimelik bir masal yaz. Masal şu özelliklere sahip olmalı:
-    - Ana karakter: {character_name} adında bir {character_type}
-    - Ortam: {setting}
-    - Tema: {theme}
-    - Masal eğitici ve çocuk dostu olmalı
-    - Karmaşık kelimeler kullanma, 7-10 yaş arası çocukların anlayabileceği dilde olsun
-    - Türkçe olarak yaz
-    - Sadece masal metnini döndür, başlık veya açıklama ekleme
+    GÖREV: Tam olarak {word_limit} kelimeden oluşan bir çocuk masalı yaz.
+
+    ÖNEMLİ TALİMATLAR:
+    1. Hikaye TAM OLARAK {word_limit} kelime içermeli
+    2. Hikaye şunları içermeli:
+       - Ana karakter: {character_name} adında bir {character_type}
+       - Ortam: {setting}
+       - Tema: {theme}
+    3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
+    4. Basit Türkçe kullan
+    5. Kelime sayımını üç kez kontrol et
+    6. Başlık EKLEME
+    7. Ne bir kelime fazla, ne bir kelime eksik olmalı
+
+    Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {word_limit} kelimedir" gibi ifadeler kullanma).
     """
     
     try:
@@ -328,16 +399,77 @@ def generate_tale_text_with_openai(character_name, character_type, setting, them
                 {"role": "system", "content": "Sen çocuklar için masal yazan bir yazarsın. Eğitici, eğlenceli ve çocuk dostu masallar yazarsın."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=word_limit * 5,  # Yaklaşık olarak kelime sayısı x 5 token
-            temperature=0.7
+            max_tokens=word_limit * 8,  # Kelime sayısı x 8 token (daha fazla token verelim)
+            temperature=0.7,
+            presence_penalty=0.1,  # Tekrarları önlemek için hafif bir presence penalty ekleyelim
+            frequency_penalty=0.1  # Tekrarları önlemek için hafif bir frequency penalty ekleyelim
         )
         
         tale_text = response.choices[0].message.content.strip()
         
         # Kelime sayısı kontrolü
         words = tale_text.split()
-        if len(words) > word_limit * 1.2:  # %20 tolerans
+        word_count = len(words)
+        logger.info(f"OpenAI tarafından üretilen kelime sayısı: {word_count}")
+        
+        if word_count > word_limit * 1.2:  # %20 tolerans
+            logger.info(f"Kelime sayısı fazla, {word_limit} kelimeye kısaltılıyor...")
             tale_text = ' '.join(words[:word_limit])
+        elif word_count < word_limit * 0.8:  # Kelime sayısı %20'den fazla az ise
+            logger.warning(f"Kelime sayısı çok az ({word_count}), istenen: {word_limit}. Yeniden deneniyor...")
+            
+            # Yeni bir prompt oluştur ve daha net şekilde kelime sayısını vurgula
+            retry_prompt = f"""
+            GÖREV: Tam olarak {word_limit} kelimeden oluşan bir çocuk masalı yaz.
+
+            ÖNEMLİ TALİMATLAR (DİKKATLİCE UYGULANACAK):
+            1. Hikaye TAM OLARAK {word_limit} kelime içermeli - kelime sayacı kullanarak ÜÇ KEZ sayımı doğrula
+            2. Hikaye şunları içermeli:
+               - Ana karakter: {character_name} adında bir {character_type}
+               - Ortam: {setting}
+               - Tema: {theme}
+            3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
+            4. Basit Türkçe kullan
+            5. Başlık EKLEME
+            6. Kelime sayısını metnin içinde belirtme
+            7. Masal {word_limit} KELİMEDEN NE BİR FAZLA NE BİR EKSİK olmalı
+            
+            ÇOK ÖNEMLİ: Sadece masal metnini gönder. Başlık, açıklama veya kelime sayısı bildirimi ekleme.
+            """
+            
+            try:
+                # Yeniden deneme
+                retry_response = openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "Sen kelime sayısı limitlerini tam olarak izleyen bir yazarsın. Verilen kelime sayısı limitlerini daima tam olarak uygularsın."},
+                        {"role": "user", "content": retry_prompt}
+                    ],
+                    max_tokens=min(4000, word_limit * 10),  # Daha fazla token, ama limite uygun
+                    temperature=0.5,  # Daha az yaratıcılık (daha kurallara uygun)
+                    presence_penalty=0.2,
+                    frequency_penalty=0.2
+                )
+                
+                # Yeni yanıtı kontrol et
+                retry_text = retry_response.choices[0].message.content.strip()
+                retry_words = retry_text.split()
+                retry_count = len(retry_words)
+                
+                logger.info(f"Yeniden deneme sonucu kelime sayısı: {retry_count}")
+                
+                # Eğer yeni deneme daha iyi sonuç verdiyse, onu kullan
+                if abs(retry_count - word_limit) < abs(word_count - word_limit):
+                    logger.info(f"Yeniden deneme daha iyi sonuç verdi, bu metin kullanılacak")
+                    tale_text = retry_text
+                    # Kelime sınırı kontrolü hala gerekli olabilir
+                    if retry_count > word_limit * 1.2:
+                        tale_text = ' '.join(retry_words[:word_limit])
+                else:
+                    logger.info(f"İlk deneme daha iyi sonuç verdi, orijinal metin kullanılacak")
+            except Exception as retry_e:
+                logger.error(f"Yeniden deneme sırasında hata: {str(retry_e)}")
+                # Hata durumunda orijinal metni kullan
         
         return tale_text
         
