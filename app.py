@@ -3,7 +3,10 @@ import base64
 import io
 import sys
 import traceback
+import json
+import logging
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_cors import CORS
 from dotenv import load_dotenv
 import google.generativeai as genai
 from PIL import Image
@@ -14,93 +17,130 @@ from gtts import gTTS
 from docx import Document
 from docx.shared import Inches
 
+# Loglama yapılandırması
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
+
 # .env dosyasından API anahtarlarını yükle
 load_dotenv()
 google_api_key = os.getenv("GOOGLE_API_KEY")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 if not google_api_key:
+    logger.error("Google API anahtarı bulunamadı! .env dosyanızı kontrol edin.")
     raise ValueError("Lütfen .env dosyasına GOOGLE_API_KEY değerini ekleyin.")
 
 # Gemini API'yi yapılandır
 genai.configure(api_key=google_api_key)
+logger.info("Gemini API yapılandırıldı.")
 
 # OpenAI API'yi yapılandır
 if openai_api_key:
     openai_client = OpenAI(api_key=openai_api_key)
-    print("OpenAI API yapılandırıldı.")
+    logger.info("OpenAI API yapılandırıldı.")
 else:
     openai_client = None
-    print("UYARI: OpenAI API anahtarı bulunamadı. DALL-E görsel oluşturma devre dışı.")
+    logger.warning("UYARI: OpenAI API anahtarı bulunamadı. DALL-E görsel oluşturma devre dışı.")
 
 app = Flask(__name__)
+CORS(app)  # CORS desteği ekle
+logger.info("Flask uygulaması ve CORS yapılandırıldı.")
 
 @app.route('/')
 def index():
+    logger.debug("Ana sayfa isteği alındı.")
     return render_template('index.html')
 
 @app.route('/generate_tale', methods=['POST'])
 def generate_tale():
     try:
-        print("Masal oluşturma isteği alındı.")
+        logger.info("Masal oluşturma isteği alındı.")
+        
+        # Request içeriğini logla
+        try:
+            logger.debug(f"İstek türü: {request.content_type}")
+            if request.data:
+                logger.debug(f"İstek verisi: {request.data.decode('utf-8')}")
+            logger.debug(f"Form verisi: {request.form}")
+            logger.debug(f"JSON verisi: {request.json if request.is_json else 'JSON verisi yok'}")
+        except Exception as e:
+            logger.error(f"İstek verisi loglanırken hata: {str(e)}")
         
         # Form verilerini al
-        if request.content_type and 'application/json' in request.content_type:
+        if request.is_json:
             data = request.json
+            character_name = data.get('character_name', '')
+            character_type = data.get('character_type', '')
+            setting = data.get('setting', '')
             theme = data.get('theme', '')
-            characters = data.get('characters', '')
-            word_limit = int(data.get('word_limit', 500))
+            word_limit = int(data.get('word_limit', 200))
             image_api = data.get('image_api', 'dalle')
         else:
             # Form verilerini al
+            character_name = request.form.get('character_name', '')
+            character_type = request.form.get('character_type', '')
+            setting = request.form.get('setting', '')
             theme = request.form.get('theme', '')
-            characters = request.form.get('characters', '')
-            word_limit = int(request.form.get('word_limit', 500))
+            
+            # word_limit ve image_api değerleri için hata kontrolü
+            try:
+                word_limit = int(request.form.get('word_limit', 200))
+            except ValueError:
+                logger.warning("Kelime sayısı geçersiz, varsayılan değer kullanılıyor.")
+                word_limit = 200
+                
             image_api = request.form.get('image_api', 'dalle')
         
-        print(f"Tema: {theme}, Karakterler: {characters}, Kelime Sayısı: {word_limit}, Görsel API: {image_api}")
+        logger.info(f"Alınan form verileri: Karakter Adı: {character_name}, Karakter Türü: {character_type}, Ortam: {setting}, Tema: {theme}, Kelime Sayısı: {word_limit}, Görsel API: {image_api}")
+        
+        # Veri doğrulama
+        if not character_name or not character_type or not setting or not theme:
+            logger.error("Eksik form verileri")
+            return jsonify({"error": "Lütfen tüm alanları doldurunuz."}), 400
         
         # Masal oluşturma
-        print("Masal metni oluşturuluyor...")
-        tale_text = generate_tale_text(theme, characters, word_limit)
+        logger.info("Masal metni oluşturuluyor...")
+        tale_text = generate_tale_text(character_name, character_type, setting, theme, word_limit)
         
-        # Metni bölümlere ayır (her 50 kelime için bir bölüm)
-        tale_sections = split_text_into_sections(tale_text, 50)
-        print(f"{len(tale_sections)} bölüm oluşturuldu.")
+        # Başlık oluştur
+        tale_title = f"{character_name}'nin {setting} Macerası"
+        logger.info(f"Masal başlığı oluşturuldu: {tale_title}")
         
-        # Her bölüm için görsel oluşturma denemesi
-        images = []
-        print("Görseller oluşturuluyor...")
-        for i, section in enumerate(tale_sections):
-            print(f"Bölüm {i+1} için görsel oluşturuluyor...")
-            image_data = generate_image_for_section(section, image_api)
-            if image_data:
-                images.append(image_data)
-                print(f"Bölüm {i+1} için görsel başarıyla oluşturuldu.")
-            else:
-                print(f"Bölüm {i+1} için görsel oluşturulamadı.")
+        # Görsel oluştur
+        logger.info(f"{image_api} API kullanarak görsel oluşturuluyor...")
+        image_prompt = f"{character_name} adlı {character_type} karakteri {setting} ortamında, {theme} temalı bir masal için çocuk kitabı tarzında illüstrasyon"
+        image_data = generate_image_for_section(image_prompt, image_api)
         
-        # Ses efektleri için anahtar kelimeleri belirle
-        sound_effects = identify_sound_effect_keywords(tale_text)
-        print(f"{len(sound_effects)} ses efekti belirlendi.")
+        # Görsel oluşturma başarı/başarısızlık durumunu logla
+        if image_data:
+            logger.info("Görsel başarıyla oluşturuldu.")
+        else:
+            logger.warning("Görsel oluşturma başarısız, varsayılan görsel kullanılacak.")
         
-        print("İşlem tamamlandı, yanıt gönderiliyor.")
-        return jsonify({
-            'tale_text': tale_text,
-            'tale_sections': tale_sections,
-            'images': images,
-            'sound_effects': sound_effects
-        })
+        # Yanıt hazırla
+        response_data = {
+            "tale_title": tale_title,
+            "tale_text": tale_text,
+            "image_url": f"data:image/jpeg;base64,{image_data}" if image_data else "static/img/default-tale.jpg"
+        }
+        
+        logger.info("Masal başarıyla oluşturuldu.")
+        return jsonify(response_data)
+        
     except Exception as e:
-        print(f"HATA: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({
-            'error': str(e),
-            'tale_text': 'Masal oluşturulurken bir hata oluştu.',
-            'tale_sections': [],
-            'images': [],
-            'sound_effects': {}
-        }), 500
+        error_details = {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+        logger.error(f"Masal oluşturulurken hata oluştu: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": str(e), "details": error_details}), 500
 
 @app.route('/save_word', methods=['POST'])
 def save_word():
@@ -115,8 +155,8 @@ def save_word():
         # Word dosyasını gönder
         return send_file(doc_path, as_attachment=True, download_name='masal.docx')
     except Exception as e:
-        print(f"Word dosyası oluşturma hatası: {str(e)}")
-        print(traceback.format_exc())
+        logger.error(f"Word dosyası oluşturma hatası: {str(e)}")
+        logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 @app.route('/generate_audio', methods=['POST'])
@@ -131,8 +171,8 @@ def generate_audio():
         # Ses dosyasını gönder
         return send_file(audio_path, as_attachment=True, download_name='masal.mp3')
     except Exception as e:
-        print(f"Ses oluşturma hatası: {str(e)}")
-        print(traceback.format_exc())
+        logger.error(f"Ses oluşturma hatası: {str(e)}")
+        logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 def create_word_document(tale_text, images):
@@ -170,8 +210,8 @@ def create_word_document(tale_text, images):
         
         return doc_path
     except Exception as e:
-        print(f"Word dosyası oluşturma hatası: {e}")
-        print(traceback.format_exc())
+        logger.error(f"Word dosyası oluşturma hatası: {e}")
+        logger.error(traceback.format_exc())
         raise
 
 def create_audio(text):
@@ -187,28 +227,63 @@ def create_audio(text):
         
         return audio_path
     except Exception as e:
-        print(f"Ses oluşturma hatası: {e}")
-        print(traceback.format_exc())
+        logger.error(f"Ses oluşturma hatası: {e}")
+        logger.error(traceback.format_exc())
         raise
 
-def generate_tale_text(theme, characters, word_limit):
+def generate_tale_text(character_name, character_type, setting, theme, word_limit):
     """Gemini API kullanarak masal metni oluşturur"""
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Güncel model adı formatı
+        logger.info("Gemini API ile masal metni oluşturuluyor...")
+        
+        # Desteklenen modelleri listele
+        try:
+            models = genai.list_models()
+            logger.info(f"Kullanılabilir modeller: {[model.name for model in models]}")
+        except Exception as e:
+            logger.warning(f"Model listesi alınamadı: {str(e)}")
+        
+        # Doğru model adını kullan (güncel API'ye göre)
+        try:
+            model = genai.GenerativeModel("models/gemini-1.5-pro")
+        except Exception as e1:
+            logger.warning(f"models/gemini-1.5-pro modeli yüklenemedi: {str(e1)}")
+            try:
+                model = genai.GenerativeModel("models/gemini-pro")
+            except Exception as e2:
+                logger.warning(f"models/gemini-pro modeli yüklenemedi: {str(e2)}")
+                try:
+                    model = genai.GenerativeModel("gemini-pro")
+                except Exception as e3:
+                    logger.error(f"Hiçbir Gemini modeli yüklenemedi: {str(e3)}")
+                    raise ValueError("Gemini API modeli başlatılamadı")
+        
         prompt = f"""
-        2 yaşındaki bir çocuk için bir masal yazar mısın? 
-        Tema: {theme}
-        Karakterler: {characters}
-        Kelime sayısı yaklaşık {word_limit} olsun.
-        Masal basit, anlaşılır ve çocuk dostu olmalı.
+        Çocuklar için {word_limit} kelimelik bir masal yaz. Masal şu özelliklere sahip olmalı:
+        - Ana karakter: {character_name} adında bir {character_type}
+        - Ortam: {setting}
+        - Tema: {theme}
+        - Masal eğitici ve çocuk dostu olmalı
+        - Karmaşık kelimeler kullanma, 7-10 yaş arası çocukların anlayabileceği dilde olsun
+        - Türkçe olarak yaz
+        - Sadece masal metnini döndür, başlık veya açıklama ekleme
         """
         
         response = model.generate_content(prompt)
-        return response.text
+        tale_text = response.text.strip()
+        
+        # Kelime sayısı kontrolü
+        words = tale_text.split()
+        if len(words) > word_limit * 1.2:  # %20 tolerans
+            tale_text = ' '.join(words[:word_limit])
+        
+        return tale_text
+    
     except Exception as e:
-        print(f"Masal oluşturma hatası: {e}")
-        print(traceback.format_exc())
-        return f"Masal oluşturulamadı: {str(e)}"
+        logger.error(f"Masal metni oluşturulurken hata: {str(e)}")
+        logger.error(traceback.format_exc())
+        return f"Masal oluşturulamadı. Hata: {str(e)}"
 
 def split_text_into_sections(text, words_per_section):
     """Metni belirli kelime sayısına göre bölümlere ayırır"""
@@ -226,15 +301,16 @@ def generate_image_for_section(section_text, image_api='dalle'):
     try:
         # Kullanıcı DALL-E'yi seçtiyse ve OpenAI API anahtarı varsa DALL-E kullan
         if image_api == 'dalle' and openai_client:
-            print("DALL-E API kullanılıyor...")
+            logger.info("DALL-E API kullanılıyor...")
             return generate_image_with_dalle(section_text)
         # Diğer durumlarda Gemini API ile dene
         else:
-            print("Gemini API kullanılıyor...")
+            logger.info("Gemini API kullanılıyor...")
             return generate_image_with_gemini(section_text)
     except Exception as e:
-        print(f"Görsel oluşturma hatası: {e}")
-        print(traceback.format_exc())
+        logger.error(f"Görsel oluşturma hatası: {e}")
+        logger.error(traceback.format_exc())
+        # Hata durumunda da placeholder görüntü oluştur
         return create_placeholder_image(section_text)
 
 def generate_image_with_dalle(prompt):
@@ -242,7 +318,7 @@ def generate_image_with_dalle(prompt):
     try:
         # Prompt'u çocuk dostu hale getir
         enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında: {prompt}"
-        print(f"DALL-E prompt: {enhanced_prompt[:100]}...")
+        logger.info(f"DALL-E prompt: {enhanced_prompt[:100]}...")
         
         response = openai_client.images.generate(
             model="dall-e-3",
@@ -253,7 +329,7 @@ def generate_image_with_dalle(prompt):
             style="vivid"  # "vivid" veya "natural" olabilir
         )
         image_url = response.data[0].url
-        print(f"DALL-E görsel URL'si oluşturuldu: {image_url[:50]}...")
+        logger.info(f"DALL-E görsel URL'si oluşturuldu: {image_url[:50]}...")
         
         # Resmi indir
         image_response = requests.get(image_url)
@@ -261,14 +337,14 @@ def generate_image_with_dalle(prompt):
         
         # Base64 formatına dönüştür
         base64_image = base64.b64encode(image_data).decode('utf-8')
-        print("DALL-E görsel başarıyla oluşturuldu ve Base64 formatına dönüştürüldü.")
+        logger.info("DALL-E görsel başarıyla oluşturuldu ve Base64 formatına dönüştürüldü.")
         return base64_image
     
     except Exception as e:
-        print(f"OpenAI ile görsel oluşturma hatası: {e}")
-        print(traceback.format_exc())
+        logger.error(f"OpenAI ile görsel oluşturma hatası: {e}")
+        logger.error(traceback.format_exc())
         # OpenAI hatası durumunda Gemini ile dene
-        print("DALL-E hatası nedeniyle Gemini API'ye geçiliyor...")
+        logger.info("DALL-E hatası nedeniyle Gemini API'ye geçiliyor...")
         return generate_image_with_gemini(prompt)
 
 def generate_image_with_gemini(section_text):
@@ -290,16 +366,16 @@ def generate_image_with_gemini(section_text):
             for part in candidate.content.parts:
                 if hasattr(part, 'inline_data') and part.inline_data:
                     # Base64 kodlu görüntüyü döndür
-                    print("Gemini görsel başarıyla oluşturuldu.")
+                    logger.info("Gemini görsel başarıyla oluşturuldu.")
                     return part.inline_data.data
         
         # Eğer görüntü oluşturulamazsa, boş bir görüntü oluştur
-        print("Gemini görsel oluşturamadı, placeholder görüntü oluşturuluyor.")
+        logger.warning("Gemini görsel oluşturamadı, placeholder görüntü oluşturuluyor.")
         return create_placeholder_image(section_text)
     
     except Exception as e:
-        print(f"Görsel oluşturma hatası: {e}")
-        print(traceback.format_exc())
+        logger.error(f"Görsel oluşturma hatası: {e}")
+        logger.error(traceback.format_exc())
         # Hata durumunda da placeholder görüntü oluştur
         return create_placeholder_image(section_text)
 
@@ -315,11 +391,11 @@ def create_placeholder_image(text):
         image.save(buffer, format="PNG")
         base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
         
-        print("Placeholder görüntü başarıyla oluşturuldu.")
+        logger.info("Placeholder görüntü başarıyla oluşturuldu.")
         return base64_image
     except Exception as e:
-        print(f"Placeholder görüntü oluşturma hatası: {e}")
-        print(traceback.format_exc())
+        logger.error(f"Placeholder görüntü oluşturma hatası: {e}")
+        logger.error(traceback.format_exc())
         return None
 
 def identify_sound_effect_keywords(text):

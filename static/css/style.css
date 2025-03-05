@@ -26,6 +26,9 @@
     --history-item-bg: #f8f9fa;
     --history-item-border: #dee2e6;
     --history-item-hover: #e9ecef;
+    --bg-secondary: #f7f7f7;
+    --text-primary: #333;
+    --bg-primary: #f9f9f9;
 }
 
 [data-theme="dark"] {
@@ -54,6 +57,9 @@
     --history-item-bg: #2b3035;
     --history-item-border: #495057;
     --history-item-hover: #3a4a5a;
+    --bg-secondary: #2b2b2b;
+    --text-primary: #f8f9fa;
+    --bg-primary: #333;
 }
 
 * {
@@ -329,6 +335,87 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Masal Sayfası */
+.tale-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: var(--bg-secondary);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.tale-title {
+    font-family: 'Dancing Script', cursive;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 30px;
+    color: var(--text-primary);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tale-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.tale-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    text-align: justify;
+}
+
+.tale-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.tale-image img {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.tale-image img:hover {
+    transform: scale(1.02);
+}
+
+.tale-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+@media (min-width: 768px) {
+    .tale-content {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    
+    .tale-text {
+        flex: 3;
+    }
+    
+    .tale-image {
+        flex: 2;
+        margin: 0;
+    }
+}
+
 .tale-page {
     position: relative;
     background-color: var(--tale-page-bg);
@@ -336,12 +423,6 @@ input:focus, select:focus, textarea:focus {
     padding: 30px;
     box-shadow: 0 4px 8px var(--shadow-color);
     min-height: 80vh;
-}
-
-.tale-container {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
 }
 
 .tale-header {
@@ -387,48 +468,6 @@ input:focus, select:focus, textarea:focus {
     cursor: not-allowed;
 }
 
-.tale-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    align-items: center;
-}
-
-.tale-text {
-    background-color: var(--card-bg);
-    border-radius: 10px;
-    padding: 25px;
-    box-shadow: 0 4px 8px var(--shadow-color);
-    font-size: 18px;
-    line-height: 1.8;
-    border: 1px solid var(--card-border);
-}
-
-.tale-image {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--card-bg);
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 8px var(--shadow-color);
-    border: 1px solid var(--card-border);
-    min-height: 300px;
-}
-
-.tale-image img {
-    max-width: 100%;
-    max-height: 400px;
-    border-radius: 5px;
-}
-
-.tale-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 30px;
-}
-
 .sound-effect {
     display: inline-block;
     background-color: var(--sound-effect-bg);
@@ -444,40 +483,40 @@ input:focus, select:focus, textarea:focus {
     background-color: var(--sound-effect-hover);
 }
 
+/* Yükleme Göstergesi */
 .loading {
-    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
+    z-index: 9999;
 }
 
 .loading-spinner {
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid var(--btn-primary);
+    width: 60px;
+    height: 60px;
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid var(--btn-primary);
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
     animation: spin 1s linear infinite;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .loading-message {
     color: white;
-    font-size: 18px;
+    font-size: 20px;
+    font-weight: bold;
     text-align: center;
     max-width: 80%;
-    background-color: rgba(0, 0, 0, 0.7);
-    padding: 10px 20px;
-    border-radius: 5px;
-    margin-top: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 15px 20px;
+    border-radius: 10px;
 }
 
 .error-message {

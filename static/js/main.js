@@ -25,6 +25,55 @@ document.addEventListener('DOMContentLoaded', function() {
     let taleHistory = [];
     const MAX_HISTORY = 5;
     
+    // Debug fonksiyonları
+    window.debugMode = false;
+    
+    window.log = function(message, data = null) {
+        console.log(message, data);
+        if (window.debugMode) {
+            const logElement = document.getElementById('debug-logs');
+            if (logElement) {
+                const timestamp = new Date().toTimeString().split(' ')[0];
+                let logText = `<div class="log-item"><span class="log-time">[${timestamp}]</span> ${message}</div>`;
+                if (data) {
+                    try {
+                        logText += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    } catch (e) {
+                        logText += `<pre>[Veri gösterilemiyor: ${e.message}]</pre>`;
+                    }
+                }
+                logElement.innerHTML += logText;
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+        }
+    };
+    
+    window.showDebug = function() {
+        const debugConsole = document.getElementById('debug-console');
+        if (debugConsole) {
+            debugConsole.style.display = 'block';
+        }
+    };
+    
+    window.toggleDebug = function() {
+        window.debugMode = !window.debugMode;
+        log(window.debugMode ? 'Debug modu aktif' : 'Debug modu devre dışı');
+        showDebug();
+    };
+    
+    // Hata yakalamak için global hata dinleyicisi
+    window.addEventListener('error', function(event) {
+        log(`HATA: ${event.message} (${event.filename}:${event.lineno})`);
+        showDebug();
+    });
+    
+    // Debug modu için kısayol ekle (Alt+D)
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 'd') {
+            toggleDebug();
+        }
+    });
+    
     // Sayfa yüklendiğinde geçmiş masalları yükle
     loadTaleHistory();
     
@@ -80,25 +129,32 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Sayfa geçişleri
     function showSettingsPage() {
+        log('Ayarlar sayfasına geçiliyor...');
         settingsPage.classList.add('active');
         talePage.classList.remove('active');
         
         // Eğer aktif bir masal varsa, masala dön butonunu göster
         if (taleData) {
-            returnToTaleBtn.style.display = 'flex';
+            const returnToTaleBtn = document.getElementById('return-to-tale');
+            if (returnToTaleBtn) {
+                returnToTaleBtn.style.display = 'inline-flex';
+            }
         } else {
-            returnToTaleBtn.style.display = 'none';
+            const returnToTaleBtn = document.getElementById('return-to-tale');
+            if (returnToTaleBtn) {
+                returnToTaleBtn.style.display = 'none';
+            }
         }
     }
     
     function showTalePage() {
+        log('Masal sayfasına geçiliyor...');
         settingsPage.classList.remove('active');
         talePage.classList.add('active');
         
         // Debug için konsola yazdır
-        console.log('showTalePage çağrıldı');
-        console.log('settingsPage sınıfları:', settingsPage.className);
-        console.log('talePage sınıfları:', talePage.className);
+        log('settingsPage sınıfları:', settingsPage.className);
+        log('talePage sınıfları:', talePage.className);
     }
     
     // Ayarlar sayfasına dönme butonu
@@ -123,148 +179,163 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Form gönderildiğinde AJAX ile işlem yapma
-    generateForm.addEventListener('submit', function(e) {
+    generateForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const formData = new FormData(generateForm);
-        const theme = formData.get('theme');
-        const characters = formData.get('characters');
-        const wordLimit = formData.get('word_limit');
-        const imageApi = formData.get('image_api');
+        // Form verilerini al
+        const characterName = document.getElementById('character-name').value.trim();
+        const characterType = document.getElementById('character-type').value.trim();
+        const setting = document.getElementById('setting').value.trim();
+        const theme = document.getElementById('theme').value.trim();
+        const wordLimit = document.getElementById('word-limit').value.trim();
+        const imageApi = document.getElementById('image-api').value.trim();
         
-        if (!theme || !characters || !wordLimit) {
+        // Form doğrulama
+        if (!characterName || !characterType || !setting || !theme) {
             showError('Lütfen tüm alanları doldurun.');
+            log('Form doğrulama hatası: Boş alanlar var');
             return;
         }
         
-        generateTale(theme, characters, wordLimit, imageApi);
-    });
-    
-    function generateTale(theme, characters, wordLimit, imageApi) {
-        showLoading(true, 'Masal oluşturuluyor... Bu işlem biraz zaman alabilir.');
-        hideError();
-        
-        // Fetch API'yi kullanarak sunucuya istek gönder
-        fetch('/generate_tale', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        try {
+            // Yükleme göstergesini göster
+            showLoading(true, 'Masal oluşturuluyor, lütfen bekleyin...');
+            
+            // API isteği için veri hazırla
+            const formData = new FormData();
+            formData.append('character_name', characterName);
+            formData.append('character_type', characterType);
+            formData.append('setting', setting);
+            formData.append('theme', theme);
+            formData.append('word_limit', wordLimit);
+            formData.append('image_api', imageApi);
+            
+            log('API isteği gönderiliyor...', {
+                character_name: characterName,
+                character_type: characterType,
+                setting: setting,
                 theme: theme,
-                characters: characters,
                 word_limit: wordLimit,
                 image_api: imageApi
-            }),
-        })
-        .then(response => {
+            });
+            
+            // API isteği gönder
+            showDebug(); // Debug konsolunu göster
+            log('Fetch isteği gönderiliyor: /generate_tale');
+            const response = await fetch('/generate_tale', {
+                method: 'POST',
+                body: formData
+            });
+            
+            // Yanıt kontrolü
             if (!response.ok) {
-                throw new Error('Sunucu hatası: ' + response.status);
+                const errorText = await response.text();
+                log('API yanıtı hatalı', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorText: errorText
+                });
+                throw new Error(`API yanıtı başarısız (${response.status}): ${errorText}`);
             }
-            return response.json();
-        })
-        .then(data => {
+            
+            // Yanıtı JSON olarak işle
+            const data = await response.json();
+            log('API yanıtı alındı', data);
+            
+            // Veri kontrolü
+            if (!data || !data.tale_text || !data.tale_title || !data.image_url) {
+                log('API yanıtında eksik veriler', data);
+                throw new Error('API yanıtında eksik veriler var.');
+            }
+            
+            // Masal verilerini kaydet
             taleData = data;
-            currentPage = 0;
+            log('Masal verileri kaydedildi', taleData);
             
-            // Masalı geçmişe ekle
-            addTaleToHistory({
-                id: Date.now(),
-                theme: theme,
-                characters: characters,
-                date: new Date().toLocaleDateString('tr-TR'),
-                data: data,
-                currentPage: 0
-            });
+            // Masal sayfasını güncelle
+            document.getElementById('tale-title').textContent = data.tale_title;
+            document.getElementById('tale-text').textContent = data.tale_text;
             
-            displayTalePage(currentPage);
-            showLoading(false);
-            
-            // Masal sayfasına geçiş - DOM'un güncellenmesi için setTimeout kullanıyoruz
-            setTimeout(() => {
-                showTalePage();
-                console.log('Masal sayfası gösteriliyor...');
-            }, 100);
-        })
-        .catch(error => {
-            console.error('Hata:', error);
-            showError('Masal oluşturulurken bir hata oluştu: ' + error.message);
-            showLoading(false);
-        });
-    }
-    
-    function displayTalePage(pageIndex) {
-        if (!taleData || !taleData.tale_sections || !taleData.images) {
-            return;
-        }
-        
-        // Sayfa sayısını güncelle
-        currentPage = pageIndex;
-        const totalPages = Math.min(taleData.tale_sections.length, taleData.images.length);
-        
-        // Sayfa göstergelerini güncelle
-        currentPageElement.textContent = currentPage + 1;
-        totalPagesElement.textContent = totalPages;
-        
-        // Sayfa butonlarını güncelle
-        prevPageButton.disabled = currentPage === 0;
-        nextPageButton.disabled = currentPage >= totalPages - 1;
-        
-        // Mevcut sayfanın metnini göster
-        const pageText = taleData.tale_sections[currentPage];
-        
-        // Ses efektleri ile metni formatla
-        const formattedText = formatTaleWithSoundEffects(pageText, taleData.sound_effects);
-        taleTextElement.innerHTML = formattedText;
-        
-        // Ses efekti butonlarına olay dinleyicileri ekle
-        attachSoundEffectListeners();
-        
-        // Mevcut sayfanın görselini göster
-        if (taleData.images && taleData.images.length > currentPage) {
-            const imageData = taleData.images[currentPage];
-            taleImageElement.innerHTML = `<img src="data:image/png;base64,${imageData}" alt="Masal Görseli">`;
-        } else {
-            taleImageElement.innerHTML = '<div class="no-image">Görsel yüklenemedi</div>';
-        }
-        
-        // Geçmişteki masalın mevcut sayfasını güncelle
-        updateCurrentPageInHistory();
-    }
-    
-    function formatTaleWithSoundEffects(text, soundEffects) {
-        if (!soundEffects) return text;
-        
-        let formattedText = text;
-        
-        // Ses efekti anahtar kelimeleri için metni işle
-        for (const keyword in soundEffects) {
-            if (formattedText.includes(keyword)) {
-                const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-                formattedText = formattedText.replace(regex, `<span class="sound-effect" data-sound="${keyword}">${keyword}</span>`);
+            // Resmi güncelle
+            const taleImage = document.getElementById('tale-image');
+            if (data.image_url.startsWith('data:')) {
+                taleImage.src = data.image_url;
+                log('Resim veri URL kullanılarak yükleniyor');
+            } else {
+                // Belki URL'yi başka bir yerden alabilir
+                taleImage.src = data.image_url;
+                log('Resim normal URL kullanılarak yükleniyor');
             }
+            taleImage.alt = data.tale_title;
+            
+            // Resim yüklenmesini bekle
+            taleImage.onload = function() {
+                log('Masal resmi yüklendi');
+                
+                // Yükleme göstergesini gizle
+                showLoading(false);
+                
+                // Masal sayfasına geç
+                showTalePage();
+                
+                // Masalı geçmişe ekle
+                addTaleToHistory(data);
+            };
+            
+            // Resim yüklenemezse
+            taleImage.onerror = function() {
+                log('Masal resmi yüklenemedi', { src: taleImage.src });
+                showLoading(false);
+                showError('Masal resmi yüklenemedi, ancak masal metni hazır.');
+                
+                // Resim olmadan da masal sayfasına geç
+                showTalePage();
+                
+                // Masalı geçmişe ekle
+                addTaleToHistory(data);
+            };
+            
+            // Resim yüklenmesi çok uzun sürerse timeout ekle
+            setTimeout(function() {
+                if (taleImage.complete === false) {
+                    log('Resim yükleme zaman aşımı');
+                    taleImage.src = 'static/img/default-tale.jpg'; // Varsayılan resim
+                    showLoading(false);
+                    showTalePage();
+                    addTaleToHistory(data);
+                }
+            }, 15000); // 15 saniye timeout
+            
+        } catch (error) {
+            log('Masal oluşturma hatası', { error: error.message, stack: error.stack });
+            showLoading(false);
+            showError(`Masal oluşturulurken bir hata oluştu: ${error.message}`);
+            showDebug(); // Hata durumunda debug konsolunu göster
+        }
+    });
+    
+    // Masalı geçmişe ekle
+    function addTaleToHistory(tale) {
+        // Geçmiş verilerini al
+        let taleHistory = JSON.parse(localStorage.getItem('taleHistory') || '[]');
+        
+        // Yeni masalı ekle (en başa)
+        taleHistory.unshift({
+            title: tale.tale_title,
+            text: tale.tale_text,
+            image: tale.image_url,
+            date: new Date().toISOString()
+        });
+        
+        // Maksimum 10 masal sakla
+        if (taleHistory.length > 10) {
+            taleHistory = taleHistory.slice(0, 10);
         }
         
-        return formattedText;
-    }
-    
-    function attachSoundEffectListeners() {
-        const soundEffectElements = document.querySelectorAll('.sound-effect');
-        soundEffectElements.forEach(element => {
-            element.addEventListener('click', function() {
-                const keyword = this.getAttribute('data-sound');
-                playSoundEffect(keyword);
-            });
-        });
-    }
-    
-    function playSoundEffect(keyword) {
-        if (soundEffects[keyword]) {
-            soundEffects[keyword].currentTime = 0;
-            soundEffects[keyword].play().catch(error => {
-                console.error('Ses efekti oynatılamadı:', error);
-            });
-        }
+        // Geçmişi kaydet
+        localStorage.setItem('taleHistory', JSON.stringify(taleHistory));
+        
+        log('Masal geçmişe eklendi');
     }
     
     // Önceki sayfa butonuna tıklama
@@ -323,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoading(false);
         })
         .catch(error => {
-            console.error('Hata:', error);
+            log('Hata:', { error: error.message, stack: error.stack });
             showError('Masal kaydedilirken bir hata oluştu: ' + error.message);
             showLoading(false);
         });
@@ -364,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoading(false);
         })
         .catch(error => {
-            console.error('Hata:', error);
+            log('Hata:', { error: error.message, stack: error.stack });
             showError('Sesli okuma sırasında bir hata oluştu: ' + error.message);
             showLoading(false);
         });
@@ -376,41 +447,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Masal geçmişi fonksiyonları
-    function addTaleToHistory(tale) {
-        // Önce mevcut geçmişi kontrol et
-        const existingIndex = taleHistory.findIndex(item => item.id === tale.id);
-        
-        if (existingIndex !== -1) {
-            // Varsa güncelle
-            taleHistory[existingIndex] = tale;
-        } else {
-            // Yoksa ekle
-            taleHistory.unshift(tale);
-            
-            // Maksimum geçmiş sayısını kontrol et
-            if (taleHistory.length > MAX_HISTORY) {
-                taleHistory.pop();
-            }
-        }
-        
-        // Geçmişi kaydet ve UI'ı güncelle
-        saveTaleHistory();
-        updateTaleHistoryUI();
-    }
-    
-    function updateCurrentPageInHistory() {
-        if (!taleData || taleHistory.length === 0) return;
-        
-        // Mevcut masalı geçmişte bul
-        const currentTaleIndex = taleHistory.findIndex(tale => 
-            tale.data && tale.data.tale_text === taleData.tale_text);
-        
-        if (currentTaleIndex !== -1) {
-            taleHistory[currentTaleIndex].currentPage = currentPage;
-            saveTaleHistory();
-        }
-    }
-    
     function loadTaleHistory() {
         const savedHistory = localStorage.getItem('taleHistory');
         if (savedHistory) {
@@ -418,14 +454,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 taleHistory = JSON.parse(savedHistory);
                 updateTaleHistoryUI();
             } catch (e) {
-                console.error('Geçmiş yüklenirken hata oluştu:', e);
+                log('Geçmiş yüklenirken hata oluştu:', { error: e.message, stack: e.stack });
                 taleHistory = [];
             }
         }
-    }
-    
-    function saveTaleHistory() {
-        localStorage.setItem('taleHistory', JSON.stringify(taleHistory));
     }
     
     function updateTaleHistoryUI() {
@@ -483,24 +515,55 @@ document.addEventListener('DOMContentLoaded', function() {
         showTalePage();
     }
     
+    // Yükleme göstergesi ve hata mesajı fonksiyonları
     function showLoading(show, message = 'Masal oluşturuluyor...') {
-        loadingElement.style.display = show ? 'flex' : 'none';
-        
-        // Yükleme mesajını göster/gizle
+        const loadingElement = document.getElementById('loading');
         const loadingMessage = document.getElementById('loading-message');
-        if (loadingMessage) {
+        
+        if (!loadingElement || !loadingMessage) {
+            log('Yükleme göstergesi elemanları bulunamadı!');
+            return;
+        }
+        
+        if (show) {
+            log('Yükleme göstergesi gösteriliyor:', message);
             loadingMessage.textContent = message;
-            loadingMessage.style.display = show ? 'block' : 'none';
+            loadingElement.style.display = 'flex';
+            
+            // Sayfanın kaydırılmasını engelle
+            document.body.style.overflow = 'hidden';
+        } else {
+            log('Yükleme göstergesi gizleniyor');
+            loadingElement.style.display = 'none';
+            
+            // Sayfanın kaydırılmasına izin ver
+            document.body.style.overflow = '';
         }
     }
     
     function showError(message) {
-        errorMessage.textContent = message;
-        errorMessage.style.display = 'block';
+        log('Hata mesajı gösteriliyor:', message);
+        const errorElement = document.getElementById('error-message');
+        if (!errorElement) {
+            log('Hata mesajı elemanı bulunamadı!');
+            return;
+        }
+        
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        
+        // Hata mesajına kaydır
+        errorElement.scrollIntoView({ behavior: 'smooth' });
     }
     
     function hideError() {
-        errorMessage.style.display = 'none';
+        const errorElement = document.getElementById('error-message');
+        if (!errorElement) {
+            log('Hata mesajı elemanı bulunamadı!');
+            return;
+        }
+        
+        errorElement.style.display = 'none';
     }
     
     // Sayfa yüklendiğinde tema tercihini yükle
