@@ -714,10 +714,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const newPage = currentPage - 1;
             displayPage(newPage);
             
-            // Eğer sesli okuma aktifse, yeni sayfa için ses dosyasını çal
+            // Ses oynatıcıyı göster ama otomatik oynatma yapma
             if (document.getElementById('audio-player-container').style.display === 'block') {
-                log("Önceki sayfaya geçildi, yeni ses dosyası yükleniyor...");
-                setTimeout(() => readTaleAloud(), 100);
+                log("Önceki sayfaya geçildi, ses oynatıcı hazır durumda.");
+                // Otomatik oynatma kaldırıldı, kullanıcı manuel olarak başlatacak
             }
         }
     });
@@ -741,10 +741,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const newPage = currentPage + 1;
             displayPage(newPage);
             
-            // Eğer sesli okuma aktifse, yeni sayfa için ses dosyasını çal
+            // Ses oynatıcıyı göster ama otomatik oynatma yapma
             if (document.getElementById('audio-player-container').style.display === 'block') {
-                log("Sonraki sayfaya geçildi, yeni ses dosyası yükleniyor...");
-                setTimeout(() => readTaleAloud(), 100);
+                log("Sonraki sayfaya geçildi, ses oynatıcı hazır durumda.");
+                // Otomatik oynatma kaldırıldı, kullanıcı manuel olarak başlatacak
             }
         }
     });
