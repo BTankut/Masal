@@ -437,7 +437,10 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         6. Başlık EKLEME
         7. Ne bir kelime fazla, ne bir kelime eksik olmalı
 
-        Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {word_limit} kelimedir" gibi ifadeler kullanma).
+        ÇOK ÖNEMLİ:
+        - Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {word_limit} kelimedir" gibi ifadeler kullanma)
+        - Asla "Unutmayın bu masal tam olarak X kelime içeriyor" veya benzeri ifadeler ekleme
+        - Sadece masal içeriğini yaz, başka açıklama ekleme
         """
         
         response = model.generate_content(prompt)
@@ -467,8 +470,10 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
             3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
             4. Basit Türkçe kullan
             5. Başlık EKLEME
-            6. Kelime sayısını metnin içinde belirtme
+            6. Kelime sayısını metnin içinde belirtme (yani "bu masal X kelimedir" gibi cümleler kullanma)
             7. Masal {word_limit} KELİMEDEN NE BİR FAZLA NE BİR EKSİK olmalı
+            8. Sadece masal metnini ver, açıklama veya not ekleme
+            9. Asla "Unutmayın bu masal tam olarak X kelime içeriyor" veya benzeri ifadeler ekleme
             """
             
             try:
@@ -515,7 +520,10 @@ def generate_tale_text_with_openai(character_name, character_type, setting, them
     6. Başlık EKLEME
     7. Ne bir kelime fazla, ne bir kelime eksik olmalı
 
-    Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {word_limit} kelimedir" gibi ifadeler kullanma).
+    ÇOK ÖNEMLİ:
+    - Kelime sayısını metnin kendisinde belirtme (metinde "Bu hikaye {word_limit} kelimedir" gibi ifadeler kullanma)
+    - Asla "Unutmayın bu masal tam olarak X kelime içeriyor" veya benzeri ifadeler ekleme
+    - Sadece masal içeriğini yaz, başka açıklama ekleme
     """
     
     try:
@@ -557,8 +565,9 @@ def generate_tale_text_with_openai(character_name, character_type, setting, them
             3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
             4. Basit Türkçe kullan
             5. Başlık EKLEME
-            6. Kelime sayısını metnin içinde belirtme
+            6. Kelime sayısını metnin içinde belirtme (yani "bu masal X kelimedir" gibi cümleler kullanma)
             7. Masal {word_limit} KELİMEDEN NE BİR FAZLA NE BİR EKSİK olmalı
+            8. "Unutmayın bu masal tam olarak X kelime içeriyor" gibi ifadeler asla kullanma
             
             ÇOK ÖNEMLİ: Sadece masal metnini gönder. Başlık, açıklama veya kelime sayısı bildirimi ekleme.
             """

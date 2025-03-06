@@ -12,6 +12,7 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 - **Sesli Anlatım**: Google Text-to-Speech ile Türkçe sesli anlatım
 - **Ses Kontrolü**: Durdurma, devam ettirme, hız kontrolü ve ilerleme çubuğu
 - **Kolay Kayıt**: Masalları Word dosyası olarak kaydetme imkanı
+- **Favoriler Sistemi**: Beğenilen masalları kaydetme ve tekrar erişme
 
 ### Kullanıcı Deneyimi
 - **Çocuk Dostu Arayüz**: Kolay kullanılabilir, renkli ve sezgisel tasarım
@@ -19,6 +20,8 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 - **Sayfa Başına Görsel**: Her sayfa için ayrı, içeriğe özel görseller
 - **Tema Özelleştirme**: Aydınlık/Karanlık mod seçeneği
 - **Kelime Sayısı Kontrolü**: Kısa, orta veya uzun masal seçeneği
+- **Masal Geçmişi**: Son oluşturulan 5 masal otomatik kaydedilir
+- **Favori Masallar**: En sevilen 5 masalı favorilere kaydetme imkanı
 - **Debug Modu**: Geliştirici odaklı test ve hata ayıklama özellikleri
 
 ## Teknik Yapı
@@ -34,7 +37,7 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 ### Frontend
 - **Teknolojiler**: HTML5, CSS3, JavaScript
 - **UI Bileşenleri**: Font Awesome, Google Fonts
-- **Veri Saklama**: Browser localStorage (tema tercihleri ve masal geçmişi)
+- **Veri Saklama**: Browser localStorage (tema tercihleri, masal geçmişi ve favoriler)
 
 ## Kurulum
 
@@ -77,6 +80,7 @@ python app.py
    - Sayfa geçiş düğmeleriyle hikayede ilerleyin
    - Her sayfadaki özel görselleri inceleyin
    - Sesli anlatımı dinleyin ve ses kontrollerini kullanın
+   - Beğendiğiniz masalları favorilere ekleyin
    - Masalı Word olarak kaydedin
    - Yeni masal oluşturmak için ayarlar sayfasına dönün
 
@@ -146,7 +150,9 @@ Tarayıcıda hata ayıklama konsolunu açmak için:
 - **Görsel Oluşturma**: Sayfa görsellerinin oluşturulması için 5-15 saniye bekleyin
 - **Ses Oluşturma**: Her sayfa için ilk ziyarette ses dosyası oluşturulur (2-5 saniye)
 - **Kelime Sayısı**: AI modelleri tam kelime sayısını üretmekte zorlanabilir (%25-40 sapma olabilir)
-- **Tarayıcı Depolama**: Masal geçmişi maksimum 10 giriş ile sınırlıdır
+- **Tarayıcı Depolama**: 
+  - Masal geçmişi: Son 5 oluşturulan masal otomatik kaydedilir
+  - Favoriler: En fazla 5 masal favorilere eklenebilir
 - **Ses Önbelleği**: Sayfa başına oluşturulan sesler tarayıcı oturumu boyunca saklanır
 - **Gelişmiş Loglama Sistemi**: Tüm oturum logları `logs/` klasöründe tarih-saat damgalı dosyalarda saklanır
   - Uygulama logları: `app_YYYY-MM-DD_HH-MM-SS.log` (INFO ve üstü seviye mesajlar)

@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingElement = document.getElementById('loading');
     const errorMessage = document.getElementById('error-message');
     const saveButton = document.getElementById('save-tale');
+    const favoriteButton = document.getElementById('favorite-button');
     const newTaleButton = document.getElementById('new-tale');
     const prevPageButton = document.getElementById('prev-page');
     const nextPageButton = document.getElementById('next-page');
@@ -18,17 +19,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const themeToggleTale = document.getElementById('theme-toggle-tale');
     const taleHistoryContainer = document.getElementById('tale-history-container');
+    const taleFavoritesContainer = document.getElementById('tale-favorites-container');
     const returnToTaleBtn = document.getElementById('return-to-tale');
     const audioPlayerContainer = document.getElementById('audio-player-container');
     
     let currentPage = 0;
-    let taleData = null;
+    window.taleData = null;
     let talePages = [];
     let taleImages = [];
     let taleAudios = {}; // Sayfa ses dosyalarını saklamak için obje
     let totalPages = 0;
     let taleHistory = [];
     const MAX_HISTORY = 5;
+    const MAX_FAVORITES = 5;
     const WORDS_PER_PAGE = 50;
     
     // Debug fonksiyonları
@@ -162,6 +165,24 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             // İlk sayfayı görüntüle
             displayPage(0);
+            
+            // Mevcut masal favori mi kontrol et ve favori butonunu güncelle
+            if (taleData) {
+                const currentTale = taleHistory.find(tale => tale.data && tale.data.tale_title === taleData.tale_title);
+                if (currentTale) {
+                    const isFavorite = taleFavorites.some(fav => fav.id === currentTale.id);
+                    favoriteTaleButton.innerHTML = isFavorite ? 
+                        '<i class="fas fa-heart"></i> Favorilerden Çıkar' : 
+                        '<i class="fas fa-heart"></i> Favorilere Ekle';
+                    
+                    // Favori butonunun sınıfını güncelle
+                    if (isFavorite) {
+                        favoriteTaleButton.classList.add('active');
+                    } else {
+                        favoriteTaleButton.classList.remove('active');
+                    }
+                }
+            }
             
             // Debug için konsola yazdır
             log('settingsPage sınıfları:', settingsPage.className);
@@ -305,6 +326,9 @@ document.addEventListener('DOMContentLoaded', function() {
     generateForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // Önce hata mesajlarını temizle
+        hideError();
+        
         // Form verilerini al
         const characterName = document.getElementById('character-name').value.trim();
         const characterType = document.getElementById('character-type').value.trim();
@@ -319,6 +343,12 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Lütfen tüm alanları doldurun.');
             log('Form doğrulama hatası: Boş alanlar var');
             return;
+        }
+        
+        // Masal oluşturma sırasında favori butonunu düzenle
+        const favBtn = document.getElementById('favorite-button');
+        if (favBtn) {
+            favBtn.innerHTML = '<i class="fas fa-heart"></i> Favorilere Ekle';
         }
         
         try {
@@ -392,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
             textGenerationComplete = true;
             
             // Masal verilerini kaydet
-            taleData = data;
+            window.taleData = data;
             
             // Gerçek kelime sayısını kontrol et
             const wordCount = data.tale_text.split(/\s+/).length;
@@ -468,6 +498,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Masalı geçmişe ekle
                     addTaleToHistory(data);
                     
+                    // Favori butonunu ayarla
+                    const favBtn = document.getElementById('favorite-button');
+                    if (favBtn) {
+                        try {
+                            // Bu masal favorilerde mi kontrol et
+                            const favs = localStorage.getItem('favorites');
+                            if (favs) {
+                                const favorites = JSON.parse(favs);
+                                const isFavorite = favorites.some(fav => fav.title === data.tale_title);
+                                
+                                favBtn.innerHTML = isFavorite ? 
+                                    '<i class="fas fa-heart"></i> Favorilerden Çıkar' : 
+                                    '<i class="fas fa-heart"></i> Favorilere Ekle';
+                            } else {
+                                favBtn.innerHTML = '<i class="fas fa-heart"></i> Favorilere Ekle';
+                            }
+                        } catch (e) {
+                            console.error("Favori kontrol hatası:", e);
+                            favBtn.innerHTML = '<i class="fas fa-heart"></i> Favorilere Ekle';
+                        }
+                    }
+                    
                     // Yüklü olduğunu işaretle
                     displayPage(0);
                     
@@ -504,23 +556,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Masalı geçmişe ekle
     function addTaleToHistory(tale) {
         // Geçmiş verilerini al
-        let taleHistory = JSON.parse(localStorage.getItem('taleHistory') || '[]');
+        let historyTales = JSON.parse(localStorage.getItem('taleHistory') || '[]');
+        
+        // Benzersiz bir ID oluştur
+        const taleId = Date.now().toString();
         
         // Yeni masalı ekle (en başa)
-        taleHistory.unshift({
+        const newTale = {
+            id: taleId,
             title: tale.tale_title,
             text: tale.tale_text,
             image: tale.image_url,
+            characterName: document.getElementById('character-name').value || '',
+            characterType: document.getElementById('character-type').value || '',
+            setting: document.getElementById('setting').value || '',
+            theme: document.getElementById('theme').value || '',
+            data: tale,
             date: new Date().toISOString()
-        });
+        };
         
-        // Maksimum 10 masal sakla
-        if (taleHistory.length > 10) {
-            taleHistory = taleHistory.slice(0, 10);
+        historyTales.unshift(newTale);
+        
+        // Maksimum MAX_HISTORY (5) masal sakla
+        if (historyTales.length > MAX_HISTORY) {
+            historyTales = historyTales.slice(0, MAX_HISTORY);
         }
         
         // Geçmişi kaydet
-        localStorage.setItem('taleHistory', JSON.stringify(taleHistory));
+        localStorage.setItem('taleHistory', JSON.stringify(historyTales));
+        taleHistory = historyTales;
+        
+        // UI'ı güncelle
+        updateTaleHistoryUI();
         
         log('Masal geçmişe eklendi');
     }
@@ -741,6 +808,165 @@ document.addEventListener('DOMContentLoaded', function() {
     newTaleButton.addEventListener('click', function() {
         showSettingsPage();
     });
+    
+    // Favorilere ekleme işlevi
+    if (favoriteButton) {
+        favoriteButton.addEventListener('click', function() {
+            console.log("Favorilere ekle butonuna tıklandı");
+            
+            // Masal var mı kontrol et
+            if (!taleData) {
+                showError("Kaydedilecek masal bulunamadı");
+                return;
+            }
+            
+            try {
+                // localStorage'dan mevcut favorileri al
+                let favorites = [];
+                const savedFavs = localStorage.getItem('favorites');
+                if (savedFavs) {
+                    favorites = JSON.parse(savedFavs);
+                }
+                
+                // Bu masal zaten favorilerde mi?
+                const favoriteExists = favorites.some(fav => 
+                    fav.title === taleData.tale_title
+                );
+                
+                if (favoriteExists) {
+                    // Favorilerden çıkar
+                    favorites = favorites.filter(fav => fav.title !== taleData.tale_title);
+                    localStorage.setItem('favorites', JSON.stringify(favorites));
+                    favoriteButton.innerHTML = '<i class="fas fa-heart"></i> Favorilere Ekle';
+                    showError("Favorilerden çıkarıldı", "success");
+                } else {
+                    // Favori sınırı kontrolü 
+                    if (favorites.length >= 5) {
+                        showError("En fazla 5 favori ekleyebilirsiniz", "error");
+                        return;
+                    }
+                    
+                    // Favorilere ekle
+                    favorites.push({
+                        id: Date.now().toString(),
+                        title: taleData.tale_title,
+                        text: taleData.tale_text,
+                        image: taleData.image_url,
+                        date: new Date().toISOString()
+                    });
+                    
+                    localStorage.setItem('favorites', JSON.stringify(favorites));
+                    favoriteButton.innerHTML = '<i class="fas fa-heart"></i> Favorilerden Çıkar';
+                    showError("Favorilere eklendi", "success");
+                }
+                
+                // Favori listesini güncelle
+                displayFavorites();
+            } catch (e) {
+                console.error("Favori işlemi hatası:", e);
+                showError("Favori işlemi sırasında hata oluştu");
+            }
+        });
+    }
+    
+    // Bu eski fonksiyonu kaldırıyoruz çünkü yeni favorilere ekleme fonksiyonu kullanıyoruz
+    
+    // Favori masalların ekranda gösterilmesi
+    function displayFavorites() {
+        console.log("displayFavorites çağrıldı");
+        const favoritesContainer = document.getElementById('tale-favorites-list');
+        
+        if (!favoritesContainer) {
+            console.error("Favoriler listesi elementi bulunamadı");
+            return;
+        }
+        
+        // Favorileri getir
+        let favorites = [];
+        try {
+            const savedFavorites = localStorage.getItem('favorites');
+            if (savedFavorites) {
+                favorites = JSON.parse(savedFavorites);
+            }
+        } catch (e) {
+            console.error("Favoriler yüklenemedi:", e);
+            favorites = [];
+        }
+        
+        // Favoriler boşsa mesaj göster
+        if (favorites.length === 0) {
+            favoritesContainer.innerHTML = '<p class="empty-history">Henüz favori masal eklenmemiş.</p>';
+            return;
+        }
+        
+        // Favorileri listele
+        let html = '';
+        favorites.forEach((favori, index) => {
+            const tarih = new Date(favori.date).toLocaleDateString('tr-TR');
+            
+            html += `
+            <div class="history-item" data-id="${favori.id}" data-index="${index}">
+                <div class="history-item-info">
+                    <h4>${favori.title || 'Favori Masal ' + (index + 1)}</h4>
+                    <p class="history-date">${tarih}</p>
+                </div>
+                <div class="history-buttons">
+                    <button class="btn btn-danger history-remove-btn" title="Favorilerden Çıkar">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+            `;
+        });
+        
+        // HTML'i ekrana yaz
+        favoritesContainer.innerHTML = html;
+        
+        // Silme butonlarına tıklama olaylarını ekle
+        const removeButtons = favoritesContainer.querySelectorAll('.history-remove-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const item = this.closest('.history-item');
+                const id = item.getAttribute('data-id');
+                
+                // Favoriyi sil
+                let favorites = [];
+                try {
+                    const savedFavorites = localStorage.getItem('favorites');
+                    if (savedFavorites) {
+                        favorites = JSON.parse(savedFavorites);
+                    }
+                    
+                    // ID'ye göre filtrele
+                    favorites = favorites.filter(item => item.id !== id);
+                    
+                    // Kaydet
+                    localStorage.setItem('favorites', JSON.stringify(favorites));
+                    
+                    // Arayüzü güncelle
+                    displayFavorites();
+                    
+                    // Eğer görüntülenen masal silindiyse butonu güncelle
+                    if (taleData) {
+                        const favoriteButton = document.getElementById('favorite-button');
+                        if (favoriteButton) {
+                            const title = taleData.tale_title;
+                            const masalVarMi = favorites.some(item => item.title === title);
+                            if (!masalVarMi) {
+                                favoriteButton.innerHTML = '<i class="fas fa-heart"></i> Favorilere Ekle';
+                            }
+                        }
+                    }
+                    
+                    // Bildirim ver
+                    showError("Masal favorilerden çıkarıldı", "success");
+                } catch (e) {
+                    console.error("Favori silme hatası:", e);
+                    showError("Favori silinirken hata oluştu");
+                }
+            });
+        });
+    }
     
     // Word olarak kaydet
     function saveWord() {
@@ -1020,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         audioPlayer.onerror = (e) => {
             console.error("Ses çalma hatası", e);
-            showError("Ses çalınamadı");
+            // Hata mesajını göstermeyi kaldırıyoruz çünkü kullanıcı deneyimini bozuyor
             showLoading(false);
             isPlaying = false;
             if (audioURL) {
@@ -1096,9 +1322,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sayfa yüklendiğinde otomatik olarak ses dosyasını hazırla 
     // ama oynatma - kullanıcı play butonuna basacak
     function prepareAudioForCurrentPage() {
-        // Sayfa değişikliğinde ses dosyalarını hazırla
-        if (talePages && talePages.length > 0 && currentPage >= 0 && currentPage < talePages.length) {
-            readTaleAloud(false); // Otomatik oynatma yapmadan hazırla
+        try {
+            // Sayfa değişikliğinde ses dosyalarını hazırla
+            if (talePages && talePages.length > 0 && currentPage >= 0 && currentPage < talePages.length) {
+                readTaleAloud(false); // Otomatik oynatma yapmadan hazırla
+            }
+        } catch (error) {
+            console.log("Ses hazırlama hatası:", error);
+            // Hatayı yut ve kullanıcıya gösterme
         }
     }
     
@@ -1108,6 +1339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (savedHistory) {
             try {
                 taleHistory = JSON.parse(savedHistory);
+                // Son 5 masalı al
+                taleHistory = taleHistory.slice(0, MAX_HISTORY);
                 updateTaleHistoryUI();
             } catch (e) {
                 log('Geçmiş yüklenirken hata oluştu:', { error: e.message, stack: e.stack });
@@ -1117,63 +1350,286 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateTaleHistoryUI() {
-        if (!taleHistoryContainer) return;
-        
-        if (taleHistory.length === 0) {
-            taleHistoryContainer.innerHTML = '<p class="empty-history">Henüz masal geçmişi yok.</p>';
+        console.log("updateTaleHistoryUI çağrıldı");
+        const historyListContainer = document.getElementById('tale-history-list');
+        if (!historyListContainer) {
+            console.error("tale-history-list elementi bulunamadı");
             return;
         }
         
+        // Geçmiş boş olabilir
+        if (!taleHistory) taleHistory = [];
+        
+        if (taleHistory.length === 0) {
+            historyListContainer.innerHTML = '<p class="empty-history">Henüz masal geçmişi yok.</p>';
+            return;
+        }
+        
+        console.log("Geçmiş listesi güncelleniyor:", taleHistory);
+        
         let historyHTML = '';
         
-        taleHistory.forEach(tale => {
+        taleHistory.forEach((tale, index) => {
+            // Favorilerde mi kontrol et
+            let isFavorite = false;
+            if (taleFavorites && taleFavorites.length > 0) {
+                isFavorite = taleFavorites.some(fav => {
+                    // ID veya başlık olarak kontrol et
+                    return (fav.id && tale.id && fav.id === tale.id) || 
+                           (fav.title && tale.title && fav.title === tale.title);
+                });
+            }
+            
+            const favoriteButtonClass = isFavorite ? 'btn-primary' : 'btn-secondary';
+            
             historyHTML += `
-                <div class="history-item" data-id="${tale.id}">
+                <div class="history-item" data-id="${tale.id || ''}" data-index="${index}">
                     <div class="history-item-info">
-                        <h4>${tale.theme}</h4>
-                        <p>Karakterler: ${tale.characters}</p>
-                        <p class="history-date">${tale.date}</p>
+                        <h4>${tale.title || 'Masal ' + (index + 1)}</h4>
+                        <p>${tale.characterName || ''} ${tale.characterType || ''}</p>
+                        <p class="history-date">${new Date(tale.date || new Date()).toLocaleDateString('tr-TR')}</p>
                     </div>
-                    <button class="btn btn-primary history-load-btn">
-                        <i class="fas fa-book-open"></i>
-                    </button>
+                    <div class="history-buttons">
+                        <button class="btn btn-primary history-load-btn" title="Masalı Aç">
+                            <i class="fas fa-book-open"></i>
+                        </button>
+                        <button class="btn ${favoriteButtonClass} history-favorite-btn" title="${isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
                 </div>
             `;
         });
         
-        taleHistoryContainer.innerHTML = historyHTML;
+        historyListContainer.innerHTML = historyHTML;
         
         // Geçmiş masalları yükleme butonlarına olay dinleyicileri ekle
-        const loadButtons = taleHistoryContainer.querySelectorAll('.history-load-btn');
+        const loadButtons = historyListContainer.querySelectorAll('.history-load-btn');
         loadButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const historyItem = this.closest('.history-item');
-                const taleId = parseInt(historyItem.getAttribute('data-id'));
-                const tale = taleHistory.find(t => t.id === taleId);
+                const index = parseInt(historyItem.getAttribute('data-index'));
+                const tale = taleHistory[index];
                 
                 if (tale) {
+                    console.log("Geçmiş masalını yükleme:", tale);
                     loadTaleFromHistory(tale);
+                }
+            });
+        });
+        
+        // Favori butonlarına yeni olay dinleyicileri ekle
+        const favoriteButtons = historyListContainer.querySelectorAll('.history-favorite-btn');
+        favoriteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const historyItem = this.closest('.history-item');
+                const index = parseInt(historyItem.getAttribute('data-index'));
+                const tale = taleHistory[index];
+                
+                if (tale) {
+                    console.log("Geçmiş masalı için favori butonu tıklandı:", tale);
+                    
+                    // Favorilerde mi kontrol et
+                    let foundIndex = -1;
+                    
+                    if (taleFavorites && taleFavorites.length > 0) {
+                        for (let i = 0; i < taleFavorites.length; i++) {
+                            if ((taleFavorites[i].id && tale.id && taleFavorites[i].id === tale.id) ||
+                                (taleFavorites[i].title && tale.title && taleFavorites[i].title === tale.title)) {
+                                foundIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (foundIndex > -1) {
+                        // Favorilerde var, çıkar
+                        console.log("Masal favorilerde bulundu, çıkarılıyor...");
+                        taleFavorites.splice(foundIndex, 1);
+                        localStorage.setItem('taleFavorites', JSON.stringify(taleFavorites));
+                        button.classList.remove('btn-primary');
+                        button.classList.add('btn-secondary');
+                        button.setAttribute('title', 'Favorilere Ekle');
+                        showError('Masal favorilerden çıkarıldı.', 'success');
+                    } else {
+                        // Favorilerde yok, ekle
+                        console.log("Masal favorilerde yok, ekleniyor...");
+                        
+                        // Limit kontrolü
+                        if (taleFavorites && taleFavorites.length >= MAX_FAVORITES) {
+                            showError(`En fazla ${MAX_FAVORITES} favori masal kaydedebilirsiniz. Lütfen önce eski bir favoriyi silin.`);
+                            return;
+                        }
+                        
+                        if (!taleFavorites) taleFavorites = [];
+                        taleFavorites.push(tale);
+                        localStorage.setItem('taleFavorites', JSON.stringify(taleFavorites));
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-primary');
+                        button.setAttribute('title', 'Favorilerden Çıkar');
+                        showError('Masal favorilere eklendi!', 'success');
+                    }
+                    
+                    // UI güncelle
+                    updateTaleFavoritesUI();
                 }
             });
         });
     }
     
+    // Favori masallar fonksiyonları - TAMAMEN YENİDEN YAZILDI
+    function loadTaleFavorites() {
+        console.log("loadTaleFavorites çağrıldı");
+        try {
+            const savedFavorites = localStorage.getItem('taleFavorites');
+            if (savedFavorites) {
+                taleFavorites = JSON.parse(savedFavorites);
+                console.log("Kaydedilmiş favoriler yüklendi:", taleFavorites);
+            } else {
+                console.log("Kaydedilmiş favori bulunamadı, boş dizi oluşturuluyor");
+                taleFavorites = [];
+            }
+            // Her durumda UI'ı güncelle
+            updateTaleFavoritesUI();
+        } catch (e) {
+            console.error('Favoriler yüklenirken hata oluştu:', e);
+            taleFavorites = [];
+            updateTaleFavoritesUI();
+        }
+    }
+    
+    function updateTaleFavoritesUI() {
+        console.log("updateTaleFavoritesUI çağrıldı");
+        const favoritesListContainer = document.getElementById('tale-favorites-list');
+        if (!favoritesListContainer) {
+            console.error("tale-favorites-list elementi bulunamadı");
+            return;
+        }
+        
+        // Favoriler boş olabilir
+        if (!taleFavorites) taleFavorites = [];
+        
+        if (taleFavorites.length === 0) {
+            favoritesListContainer.innerHTML = '<p class="empty-history">Henüz favori masal eklenmemiş.</p>';
+            return;
+        }
+        
+        console.log("Favoriler listesi güncelleniyor:", taleFavorites);
+        
+        let favoritesHTML = '';
+        
+        taleFavorites.forEach((tale, index) => {
+            favoritesHTML += `
+                <div class="history-item" data-id="${tale.id || ''}" data-index="${index}">
+                    <div class="history-item-info">
+                        <h4>${tale.title || 'Favori Masal ' + (index + 1)}</h4>
+                        <p>${tale.characterName || ''} ${tale.characterType || ''}</p>
+                        <p class="history-date">${new Date(tale.date || new Date()).toLocaleDateString('tr-TR')}</p>
+                    </div>
+                    <div class="history-buttons">
+                        <button class="btn btn-primary history-load-btn" title="Masalı Aç">
+                            <i class="fas fa-book-open"></i>
+                        </button>
+                        <button class="btn btn-danger history-remove-btn" title="Favorilerden Çıkar">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        favoritesListContainer.innerHTML = favoritesHTML;
+        
+        // Favori masalları yükleme butonlarına olay dinleyicileri ekle
+        const loadButtons = favoritesListContainer.querySelectorAll('.history-load-btn');
+        loadButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const favoriteItem = this.closest('.history-item');
+                const index = parseInt(favoriteItem.getAttribute('data-index'));
+                const tale = taleFavorites[index];
+                
+                if (tale) {
+                    // Masal gösterme fonksiyonunu çağır
+                    console.log("Favori masalını yükleme:", tale);
+                    loadTaleFromHistory(tale);
+                }
+            });
+        });
+        
+        // Silme butonlarına olay dinleyicileri ekle
+        const removeButtons = favoritesListContainer.querySelectorAll('.history-remove-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const favoriteItem = this.closest('.history-item');
+                const index = parseInt(favoriteItem.getAttribute('data-index'));
+                const tale = taleFavorites[index];
+                
+                if (tale) {
+                    console.log("Favori masalını silme:", index, tale);
+                    
+                    // Doğrudan diziden kaldır
+                    taleFavorites.splice(index, 1);
+                    localStorage.setItem('taleFavorites', JSON.stringify(taleFavorites));
+                    
+                    // UI güncelle
+                    updateTaleFavoritesUI();
+                    
+                    // Mesaj göster
+                    showError('Masal favorilerden kaldırıldı.', 'success');
+                }
+            });
+        });
+    }
+    
+    // Önceki addTaleToFavorites ve removeTaleFromFavorites fonksiyonları kaldırıldı
+    // Bunun yerine doğrudan favoriteTaleButton tıklama olayı içinde gerekli işlemler yapılıyor
+    
     function loadTaleFromHistory(tale) {
-        if (!tale || !tale.data) {
+        console.log("loadTaleFromHistory çağrıldı:", tale);
+        
+        if (!tale || (!tale.data && !tale.text)) {
             showError('Masal yüklenemedi.');
             return;
         }
         
-        taleData = tale.data;
+        // tale.data varsa direkt kullan, yoksa tale nesnesinden oluştur
+        if (tale.data) {
+            taleData = tale.data;
+        } else {
+            console.log("Masal verisi oluşturuluyor...");
+            // Masal verisi oluştur
+            taleData = {
+                tale_title: tale.title || "Masal",
+                tale_text: tale.text,
+                image_url: tale.image
+            };
+        }
+        
+        // Favorilere ekleme butonunu aktifleştir
+        document.getElementById('favorite-tale').disabled = false;
+        
+        // Mevcut masal favori mi kontrol et ve favori butonunu güncelle
+        const isFavorite = taleFavorites.some(fav => fav.id === tale.id);
+        const favoriteTaleButton = document.getElementById('favorite-tale');
+        favoriteTaleButton.innerHTML = isFavorite ? 
+            '<i class="fas fa-heart"></i> Favorilerden Çıkar' : 
+            '<i class="fas fa-heart"></i> Favorilere Ekle';
+        
+        // Favori butonunun sınıfını güncelle
+        if (isFavorite) {
+            favoriteTaleButton.classList.add('active');
+        } else {
+            favoriteTaleButton.classList.remove('active');
+        }
         
         // Masalı sayfalara böl
         preparePagedContent(taleData.tale_text, taleData.tale_title);
         
         // İlk sayfa için görsel ekle
-        if (tale.image) {
+        if (tale.image || taleData.image_url) {
             taleImages[0] = {
                 page: 0,
-                url: tale.image,
+                url: tale.image || taleData.image_url,
                 alt: `${taleData.tale_title} - Sayfa 1`,
                 loaded: true
             };
@@ -1211,25 +1667,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function showError(message) {
-        log('Hata mesajı gösteriliyor:', message);
+    function showError(message, type = 'error') {
+        log('Mesaj gösteriliyor:', message, type);
         const errorElement = document.getElementById('error-message');
         if (!errorElement) {
-            log('Hata mesajı elemanı bulunamadı!');
+            log('Mesaj elemanı bulunamadı!');
             return;
         }
         
+        // Mesaj tipine göre sınıf ayarla
         errorElement.textContent = message;
         errorElement.style.display = 'block';
         
-        // Hata mesajına kaydır
+        // Stil ayarla
+        if (type === 'success') {
+            errorElement.style.backgroundColor = '#28a745';  // yeşil
+        } else {
+            errorElement.style.backgroundColor = '#dc3545';  // kırmızı
+        }
+        
+        // Mesaja kaydır
         errorElement.scrollIntoView({ behavior: 'smooth' });
+        
+        // 3 saniye sonra mesajı kaldır
+        setTimeout(function() {
+            errorElement.style.display = 'none';
+        }, 3000);
     }
     
     function hideError() {
         const errorElement = document.getElementById('error-message');
         if (!errorElement) {
-            log('Hata mesajı elemanı bulunamadı!');
+            log('Mesaj elemanı bulunamadı!');
             return;
         }
         

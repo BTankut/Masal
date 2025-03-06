@@ -302,6 +302,46 @@ input:focus, select:focus, textarea:focus {
     border-radius: 50%;
 }
 
+.history-favorite-btn {
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--highlight-color);
+    color: white;
+    margin-left: 5px;
+}
+
+.history-favorite-btn:hover {
+    background-color: #e0a800;
+}
+
+.history-remove-btn {
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--error-color);
+    color: white;
+    margin-left: 5px;
+}
+
+.history-remove-btn:hover {
+    background-color: #bd2130;
+}
+
+.history-buttons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .empty-history {
     text-align: center;
     padding: 20px;
@@ -411,6 +451,35 @@ input:focus, select:focus, textarea:focus {
     flex-wrap: wrap;
     margin-top: 10px;
     opacity: 0.9;
+}
+
+/* Favori butonu stilleri */
+#favorite-tale {
+    background-color: var(--highlight-color);
+    color: #333;
+    cursor: pointer !important;
+    opacity: 1 !important;
+}
+
+#favorite-tale:hover {
+    background-color: #e0a800;
+    cursor: pointer !important;
+}
+
+#favorite-tale.active {
+    background-color: #dc3545;
+    color: white;
+    cursor: pointer !important;
+}
+
+#favorite-tale.active:hover {
+    background-color: #c82333;
+    cursor: pointer !important;
+}
+
+#favorite-tale:disabled {
+    cursor: pointer !important;
+    opacity: 0.8 !important;
 }
 
 @media (min-width: 768px) {

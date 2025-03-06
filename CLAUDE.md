@@ -9,6 +9,8 @@
 - Sayfa düzeninde metin ve görsel görüntüleme
 - Hikaye sesli okuma ve gelişmiş ses kontrolleri
 - Hikayeyi Word belgesi olarak kaydetme
+- Son 5 hikayenin otomatik kaydedilmesi
+- 5 favori masalın kaydedilmesi
 
 ### Sayfalama Sistemi
 - Her sayfada 50 kelime gösteriliyor
@@ -46,6 +48,7 @@
 - **Hatalar**: Spesifik except bloklarını kullan
 - **Güvenlik**: API anahtarları sadece .env dosyasında
 - **Frontend**: Modüler JS, responsive design, `window.log()`
+- **Yerel Depolama**: LocalStorage API ile masal geçmişi ve favori masallar 
 - **AI İçerik**: Daima çocuk dostu ve yaşa uygun
 - **API Limitleri**: 
   - OpenAI `max_tokens`: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
@@ -75,6 +78,11 @@
   5. Kelime sayımını üç kez kontrol et
   6. Başlık EKLEME
   7. Ne bir kelime fazla, ne bir kelime eksik olmalı
+
+  ÇOK ÖNEMLİ:
+  - Kelime sayısını metnin kendisinde belirtme
+  - "Bu masal X kelimedir" veya "Unutmayın bu masal tam olarak X kelime içeriyor" gibi ifadeler kullanma
+  - Sadece masal içeriğini yaz, başka açıklama ekleme
   ```
 - **Yeniden Deneme Stratejisi**: 
   - Kelime sayısı çok az olduğunda (%20'den fazla sapma) daha katı uyarılarla tekrar dene
@@ -113,3 +121,7 @@
   - Tam Hazırlık: İçeriklerin tamamen hazır olmasını bekleyerek kesintisiz kullanıcı deneyimi
   - Ses Önbelleği: Tüm sayfaların ses dosyaları başlangıçta üretilip tarayıcıda saklanır
   - Medya Senkronizasyonu: Sayfa değişikliklerinde görsel ve ses dosyaları otomatik olarak güncellenir
+  - LocalStorage Kullanımı: 
+    - Tema tercihleri: "theme" anahtarı ile saklanır
+    - Masal geçmişi: "taleHistory" anahtarı ile son 5 masal saklanır
+    - Favori masallar: "favs" anahtarı ile en fazla 5 favori masal saklanır
