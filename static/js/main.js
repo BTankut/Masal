@@ -158,9 +158,15 @@ document.addEventListener('DOMContentLoaded', function() {
         settingsPage.classList.remove('active');
         talePage.classList.add('active');
         
-        // Debug için konsola yazdır
-        log('settingsPage sınıfları:', settingsPage.className);
-        log('talePage sınıfları:', talePage.className);
+        // İçeriklerin doğru gösterilmesini sağla
+        setTimeout(() => {
+            // İlk sayfayı görüntüle
+            displayPage(0);
+            
+            // Debug için konsola yazdır
+            log('settingsPage sınıfları:', settingsPage.className);
+            log('talePage sınıfları:', talePage.className);
+        }, 50);
     }
     
     // Ayarlar sayfasına dönme butonu
@@ -184,6 +190,126 @@ document.addEventListener('DOMContentLoaded', function() {
         'ağlama': new Audio('/static/sounds/cry.mp3')
     };
     
+    // İlerleme durumlarını takip etmek için değişkenler
+    let textGenerationComplete = false;
+    let imageGenerationComplete = false;
+    let audioGenerationComplete = false;
+    
+    // İlerleme durumlarını güncelleme fonksiyonu
+    function updateProgressStatus(type, status) {
+        const statusElement = document.getElementById(`${type}-status`);
+        
+        // Mevcut sınıfları temizle
+        statusElement.classList.remove('status-pending', 'status-loading', 'status-complete', 'status-error');
+        
+        let icon, text;
+        
+        switch(status) {
+            case 'pending':
+                statusElement.classList.add('status-pending');
+                icon = 'fa-circle';
+                text = 'Bekliyor';
+                break;
+            case 'loading':
+                statusElement.classList.add('status-loading');
+                icon = 'fa-spinner fa-spin';
+                text = 'Oluşturuluyor...';
+                break;
+            case 'complete':
+                statusElement.classList.add('status-complete');
+                icon = 'fa-check-circle';
+                text = 'Tamamlandı';
+                break;
+            case 'error':
+                statusElement.classList.add('status-error');
+                icon = 'fa-times-circle';
+                text = 'Hata';
+                break;
+        }
+        
+        statusElement.innerHTML = `<i class="fas ${icon}"></i> ${text}`;
+        
+        // Tüm işlemler tamamlandıysa masal sayfasına geç
+        checkAllComplete();
+    }
+    
+    // Tüm işlemlerin tamamlanıp tamamlanmadığını kontrol et
+    function checkAllComplete() {
+        if (textGenerationComplete && imageGenerationComplete && audioGenerationComplete) {
+            setTimeout(() => {
+                // Sayfanın ilk kez doğru şekilde görüntülenmesi için
+                // Önce içeriklerin doğru şekilde yüklendiğinden emin olalım
+                displayPage(0);
+                
+                // Önce sayfayı gösterelim
+                showTalePage();
+                
+                // Kısa bir gecikme sonra yükleme ekranını gizleyelim
+                setTimeout(() => {
+                    showLoading(false);
+                    
+                    // Ekstra güvenlik için birkaç milisaniye sonra tekrar displayPage çağıralım
+                    setTimeout(() => {
+                        displayPage(0);
+                    }, 100);
+                }, 500);
+            }, 500); // Kullanıcının tamamlandığını görmesi için kısa bir bekleme
+        }
+    }
+    
+    // Tüm sayfaların ses dosyalarını önceden oluştur
+    function preloadAllAudio(pages) {
+        log('Tüm sayfalar için ses dosyaları önceden yükleniyor...');
+        updateProgressStatus('audio', 'loading');
+        
+        // Her sayfa için ses oluşturma promise'lerini bir diziye topla
+        const audioPromises = pages.map((pageText, pageIndex) => {
+            return new Promise((resolve) => {
+                log(`Sayfa ${pageIndex + 1} için ses dosyası yükleniyor...`);
+                
+                fetch('/generate_audio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: pageText, page: pageIndex })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Ses oluşturma hatası: ${response.status}`);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    log(`Sayfa ${pageIndex + 1} için ses dosyası başarıyla oluşturuldu (${blob.size} bytes)`);
+                    taleAudios[pageIndex] = { blob: blob };
+                    resolve(true);
+                })
+                .catch(error => {
+                    log(`Sayfa ${pageIndex + 1} ses oluşturma hatası: ${error.message}`);
+                    resolve(false); // Hataya rağmen devam et
+                });
+            });
+        });
+        
+        // Tüm ses dosyaları oluşturulduğunda
+        return Promise.all(audioPromises)
+            .then(results => {
+                const successCount = results.filter(success => success).length;
+                log(`Ses dosyaları yükleme tamamlandı: ${successCount}/${pages.length} başarılı`);
+                
+                if (successCount === 0 && pages.length > 0) {
+                    // Hiçbir ses dosyası oluşturulamadıysa hata durumu göster
+                    updateProgressStatus('audio', 'error');
+                } else {
+                    updateProgressStatus('audio', 'complete');
+                }
+                
+                audioGenerationComplete = true;
+                return successCount;
+            });
+    }
+    
     // Form gönderildiğinde AJAX ile işlem yapma
     generateForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -195,6 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const theme = document.getElementById('theme').value.trim();
         const wordLimit = document.getElementById('word-limit').value.trim();
         const imageApi = document.getElementById('image-api').value.trim();
+        const textApi = document.getElementById('text-api').value.trim();
         
         // Form doğrulama
         if (!characterName || !characterType || !setting || !theme) {
@@ -204,6 +331,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
+            // İlerleme durumlarını sıfırla
+            textGenerationComplete = false;
+            imageGenerationComplete = false;
+            audioGenerationComplete = false;
+            
+            // Tüm durum göstergelerini bekliyor durumuna getir
+            updateProgressStatus('text', 'pending');
+            updateProgressStatus('image', 'pending');
+            updateProgressStatus('audio', 'pending');
+            
             // Yükleme göstergesini göster
             showLoading(true, 'Masal oluşturuluyor, lütfen bekleyin...');
             
@@ -215,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('theme', theme);
             formData.append('word_limit', wordLimit);
             formData.append('image_api', imageApi);
+            formData.append('text_api', textApi);
             
             log('API isteği gönderiliyor...', {
                 character_name: characterName,
@@ -222,8 +360,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 setting: setting,
                 theme: theme,
                 word_limit: wordLimit,
-                image_api: imageApi
+                image_api: imageApi,
+                text_api: textApi
             });
+            
+            // Metin oluşturma durumunu güncelle
+            updateProgressStatus('text', 'loading');
             
             // API isteği gönder
             showDebug(); // Debug konsolunu göster
@@ -254,6 +396,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('API yanıtında eksik veriler var.');
             }
             
+            // Metin oluşturma tamamlandı
+            updateProgressStatus('text', 'complete');
+            textGenerationComplete = true;
+            
             // Masal verilerini kaydet
             taleData = data;
             
@@ -272,12 +418,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Masalı sayfalara böl
             preparePagedContent(data.tale_text, data.tale_title);
             
-            // İlk sayfayı göster
-            displayPage(0);
+            // İlk sayfanın görüntüsü zaten var
+            updateProgressStatus('image', 'loading');
+            
+            // Tüm sayfaların ses dosyalarını önceden oluşturalım
+            if (talePages.length > 0) {
+                preloadAllAudio(talePages);
+            }
             
             // Her sayfa için kendi resmi olacak şekilde düzenleme yapalım
-            // İlk sayfa için zaten resim geldi, diğer sayfalar için API çağrıları yapalım
-            if (talePages.length > 1) {
+            const imagePromises = [];
+            
+            if (talePages.length > 0) {
                 console.log(`${talePages.length} sayfa için görseller oluşturuluyor...`);
                 
                 // İlk sayfa resmi zaten var, onu kaydedelim
@@ -289,64 +441,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 
                 // Diğer sayfalar için resimler oluşturalım (1. indeksten başlayarak)
-                // Zaman gecikmesi ekleyerek API çağrılarını sıralı yapalım
-                for (let i = 1; i < talePages.length; i++) {
-                    // Her sayfa için 2 saniye gecikmeyle resim oluştur
-                    setTimeout(() => {
-                        console.log(`Sayfa ${i+1} resmi için API çağrısı yapılıyor...`);
-                        generateImageForPage(i, talePages[i], data.tale_title, {
-                            character_name: characterName,
-                            character_type: characterType, 
-                            setting: setting,
-                            image_api: imageApi
-                        });
-                    }, i * 2000); // Her bir sayfa için 2 saniye gecikme 
+                if (talePages.length > 1) {
+                    for (let i = 1; i < talePages.length; i++) {
+                        // Her sayfa için resim oluşturma promise'ini ekle
+                        imagePromises.push(
+                            new Promise((resolve) => {
+                                setTimeout(() => {
+                                    console.log(`Sayfa ${i+1} resmi için API çağrısı yapılıyor...`);
+                                    // generateImageForPage fonksiyonunu modifiye edelim
+                                    generateImageForPage(i, talePages[i], data.tale_title, {
+                                        character_name: characterName,
+                                        character_type: characterType, 
+                                        setting: setting,
+                                        image_api: imageApi
+                                    })
+                                    .then(() => resolve())
+                                    .catch(() => resolve()); // Hata olsa da devam et
+                                }, i * 2000); // Her bir sayfa için 2 saniye gecikme 
+                            })
+                        );
+                    }
+                } else {
+                    // Tek sayfa var, görsel oluşturma tamamlandı
+                    updateProgressStatus('image', 'complete');
+                    imageGenerationComplete = true;
                 }
-            }
-            
-            // Tüm resimler yüklendikten sonra sayfayı göster
-            Promise.all(taleImages.map(img => {
-                return new Promise((resolve, reject) => {
-                    const imgElement = new Image();
-                    imgElement.onload = () => resolve();
-                    imgElement.onerror = () => {
-                        log('Resim yüklenemedi:', img);
-                        // Hata durumunda varsayılan resim kullan
-                        img.url = 'static/img/default-tale.jpg';
-                        resolve();
-                    };
-                    imgElement.src = img.url;
+                
+                // Tüm görsel oluşturma işlemleri tamamlandığında
+                Promise.all(imagePromises)
+                .then(() => {
+                    log('Tüm görseller oluşturuldu');
+                    updateProgressStatus('image', 'complete');
+                    imageGenerationComplete = true;
+                    
+                    // Masalı geçmişe ekle
+                    addTaleToHistory(data);
+                    
+                    // Yüklü olduğunu işaretle
+                    displayPage(0);
+                    
+                    // Tüm işlemler tamam mı diye kontrol et
+                    checkAllComplete();
+                })
+                .catch(error => {
+                    log('Görsel oluşturma hatası', error);
+                    // Hata durumunda bile ilerle
+                    updateProgressStatus('image', 'error');
+                    imageGenerationComplete = true;
+                    checkAllComplete();
                 });
-            }))
-            .then(() => {
-                // Yükleme göstergesini gizle
-                showLoading(false);
-                
-                // Masal sayfasına geç
-                showTalePage();
-                
-                // Masalı geçmişe ekle
-                addTaleToHistory(data);
-            })
-            .catch(error => {
-                log('Resim yükleme hatası', error);
-                showLoading(false);
-                showTalePage();
-                addTaleToHistory(data);
-            });
-            
-            // Resim yüklenmesi çok uzun sürerse timeout ekle
-            setTimeout(function() {
-                showLoading(false);
-                showTalePage();
-                addTaleToHistory(data);
-            }, 15000); // 15 saniye timeout
-            
+            }
         } catch (error) {
             log('Masal oluşturma hatası', { error: error.message, stack: error.stack });
+            
+            // Hata durumunda tüm durumları hata olarak işaretle
+            updateProgressStatus('text', 'error');
+            updateProgressStatus('image', 'error');
+            updateProgressStatus('audio', 'error');
+            
             showLoading(false);
             showError(`Masal oluşturulurken bir hata oluştu: ${error.message}`);
             showDebug(); // Hata durumunda debug konsolunu göster
+            
+            // İlerlemeli değişkenleri güncelle
+            textGenerationComplete = true;
+            imageGenerationComplete = true;
+            audioGenerationComplete = true;
         }
     });
     
@@ -408,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePageNavigation();
     }
     
-    // Sayfa için görsel oluşturma
+    // Sayfa için görsel oluşturma (Promise döndüren versiyonu)
     function generateImageForPage(pageIndex, pageText, title, characterInfo) {
         console.log(`Sayfa ${pageIndex + 1} için görsel oluşturuluyor...`);
         
@@ -422,52 +582,54 @@ document.addEventListener('DOMContentLoaded', function() {
             image_api: characterInfo.image_api || 'dalle'
         };
         
-        // API isteği gönder
-        fetch('/generate_page_image', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Görsel isteği başarısız: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.image_url) {
-                console.log(`Sayfa ${pageIndex + 1} için görsel başarıyla oluşturuldu`);
-                
-                // Görseli kaydet
-                taleImages[pageIndex] = {
-                    page: pageIndex,
-                    url: data.image_url,
-                    alt: `${title} - Sayfa ${pageIndex + 1}`,
-                    loaded: true
-                };
-                
-                // Eğer şu anda gösterilen sayfa bu ise, görseli güncelle
-                if (currentPage === pageIndex) {
-                    displayPage(currentPage);
+        // Promise döndür
+        return new Promise((resolve, reject) => {
+            // API isteği gönder
+            fetch('/generate_page_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Görsel isteği başarısız: ${response.status}`);
                 }
-            } else {
-                console.warn(`Sayfa ${pageIndex + 1} için görsel oluşturulamadı, varsayılan resim kullanılacak`);
-            }
-        })
-        .catch(error => {
-            console.error(`Sayfa ${pageIndex + 1} görseli oluşturma hatası:`, error);
-            
-            // 3 saniye sonra yeniden dene - özellikle 3 ve 5. sayfalar için
-            if (pageIndex === 2 || pageIndex === 4) {
-                console.log(`Sayfa ${pageIndex + 1} için yeniden deneniyor...`);
-                setTimeout(() => {
-                    generateImageForPage(pageIndex, pageText, title, characterInfo);
-                }, 3000);
-            }
-            
-            // Hata durumunda varsayılan resim kullanılmaya devam eder
+                return response.json();
+            })
+            .then(data => {
+                if (data.image_url) {
+                    console.log(`Sayfa ${pageIndex + 1} için görsel başarıyla oluşturuldu`);
+                    
+                    // Görseli kaydet
+                    taleImages[pageIndex] = {
+                        page: pageIndex,
+                        url: data.image_url,
+                        alt: `${title} - Sayfa ${pageIndex + 1}`,
+                        loaded: true
+                    };
+                    
+                    // Eğer şu anda gösterilen sayfa bu ise, görseli güncelle
+                    if (currentPage === pageIndex) {
+                        displayPage(currentPage);
+                    }
+                    
+                    resolve(data.image_url);
+                } else {
+                    console.warn(`Sayfa ${pageIndex + 1} için görsel oluşturulamadı, varsayılan resim kullanılacak`);
+                    reject(new Error('Görsel URL alınamadı'));
+                }
+            })
+            .catch(error => {
+                console.error(`Sayfa ${pageIndex + 1} görseli oluşturma hatası:`, error);
+                
+                // Hata durumunda varsayılan resim kullanılmaya devam eder
+                console.log(`Sayfa ${pageIndex + 1} için varsayılan görsel kullanılacak`);
+                taleImages[pageIndex].url = 'static/img/default-tale.jpg';
+                // Hataya rağmen işlemi başarılı kabul ederek devam et
+                resolve('static/img/default-tale.jpg');
+            });
         });
     }
     
@@ -488,16 +650,45 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Sayfa mevcut mu kontrol et
+        if (!talePages || !talePages[pageIndex]) {
+            log('HATA: sayfa verisi bulunamadı:', pageIndex);
+            return;
+        }
+        
+        // Görsel mevcut mu kontrol et
+        if (!taleImages || !taleImages[pageIndex]) {
+            log('HATA: sayfa görseli bulunamadı:', pageIndex);
+            return;
+        }
+        
         currentPage = pageIndex;
         log(`Sayfa gösteriliyor: ${pageIndex + 1}/${totalPages}`);
         
-        // Sayfadaki metni göster
-        document.getElementById('tale-text').textContent = talePages[pageIndex];
+        // Sayfadaki metni göster (innerHTML yerine textContent kullan)
+        const taleTextElement = document.getElementById('tale-text');
+        if (taleTextElement) {
+            taleTextElement.textContent = talePages[pageIndex];
+        } else {
+            log('HATA: tale-text elementi bulunamadı');
+        }
         
         // Sayfanın resmini göster
         const taleImage = document.getElementById('tale-image');
-        taleImage.src = taleImages[pageIndex].url;
-        taleImage.alt = taleImages[pageIndex].alt;
+        if (taleImage) {
+            // Görsel URL'si varsa kullan
+            if (taleImages[pageIndex] && taleImages[pageIndex].url) {
+                taleImage.src = taleImages[pageIndex].url;
+                taleImage.alt = taleImages[pageIndex].alt;
+                log(`Görsel yüklendi: ${taleImages[pageIndex].url.substring(0, 30)}...`);
+            } else {
+                log('UYARI: Görsel URL bulunamadı, varsayılan görsel kullanılıyor');
+                taleImage.src = 'static/img/default-tale.jpg';
+                taleImage.alt = `${pageIndex + 1}. sayfa görseli yüklenemedi`;
+            }
+        } else {
+            log('HATA: tale-image elementi bulunamadı');
+        }
         
         // Sayfa göstergelerini güncelle
         updatePageNavigation();

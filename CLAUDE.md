@@ -13,7 +13,9 @@
 ### Sayfalama Sistemi
 - Her sayfada 50 kelime gösteriliyor
 - Her sayfa için özel görsel oluşturuluyor
-- Her sayfa için özel ses dosyası oluşturuluyor ve önbellekleniyor
+- Tüm sayfaların ses dosyaları önceden oluşturuluyor ve önbellekleniyor
+- Kullanıcı arayüzünde ilerleme göstergeleri (metin, görsel, ses üretimi için)
+- Tüm içerikler hazır olduğunda masal sayfası gösteriliyor
 - Sayfa navigasyon butonları (ileri, geri)
 - Sayfa değişikliklerinde ses dosyası otomatik olarak değişiyor
 
@@ -39,6 +41,11 @@
 - **API Limitleri**: 
   - OpenAI `max_tokens`: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
   - DALL-E: Dakikada 5 istek limiti (generate_image_with_dalle'de 12sn bekleme)
+- **Gemini Modelleri**:
+  - Öncelikli modeller: `models/gemini-2.0-flash-001`, `models/gemini-2.0-flash-lite-001`
+  - Yedek model: `models/gemini-1.5-pro`
+  - Model isimleri her zaman "models/" prefixi ile kullanılmalı
+  - İleri düzey prompt detayları görsel oluşturma için
 
 ## AI Prompt Optimizasyonu
 - **En İyi Prompt Stili**: 
@@ -84,5 +91,7 @@
   - Sayfalama: 50 kelime/sayfa optimum
   - Görsel-metin paralelliği: 450px yükseklikte containerlar
   - Word belgesi oluşturma: Görsel-metin bütünlüğü
-  - Ses önbelleği: Her sayfa için oluşturulan ses dosyaları tarayıcıda saklanır
-  - Medya senkronizasyonu: Sayfa değişikliklerinde görsel ve ses dosyaları otomatik olarak güncellenir
+  - İlerleme Göstergeleri: Metin, görsel ve ses üretimi için detaylı durum bilgisi
+  - Tam Hazırlık: İçeriklerin tamamen hazır olmasını bekleyerek kesintisiz kullanıcı deneyimi
+  - Ses Önbelleği: Tüm sayfaların ses dosyaları başlangıçta üretilip tarayıcıda saklanır
+  - Medya Senkronizasyonu: Sayfa değişikliklerinde görsel ve ses dosyaları otomatik olarak güncellenir

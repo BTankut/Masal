@@ -171,6 +171,20 @@
     <div id="loading" class="loading" style="display: none;">
         <div class="loading-spinner"></div>
         <div id="loading-message" class="loading-message">Masal oluşturuluyor...</div>
+        <div class="loading-progress" id="loading-progress">
+            <div class="progress-item">
+                <div class="progress-label">Masal Metni</div>
+                <div class="progress-status status-pending" id="text-status"><i class="fas fa-circle"></i> Bekliyor</div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-label">Görseller</div>
+                <div class="progress-status status-pending" id="image-status"><i class="fas fa-circle"></i> Bekliyor</div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-label">Ses Dosyaları</div>
+                <div class="progress-status status-pending" id="audio-status"><i class="fas fa-circle"></i> Bekliyor</div>
+            </div>
+        </div>
     </div>
     
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

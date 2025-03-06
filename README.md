@@ -116,9 +116,11 @@ Uygulama, masalları sayfalar halinde gösterir ve her sayfa için özel ses ve 
 - **Sayfa Başına İçerik**: Her sayfa yaklaşık 50 kelime içerir
 - **Sayfa Başına Özel Görsel**: Her sayfa için ayrı AI görsel üretilir
 - **Sayfa Başına Özel Ses**: Her sayfa için ayrı ses dosyası oluşturulur ve oynatılır
+- **Tamamlanma İlerleme Göstergesi**: Masal metni, görseller ve ses dosyaları oluşturulurken ayrıntılı durum göstergeleri
+- **Tam İçerik Hazırlığı**: Tüm içerikler (metin, görseller ve sesler) hazır olduğunda masal görüntülenir
 - **Sayfa Gezinme**: İleri/geri butonlarıyla sayfalar arası geçiş yapılabilir
 - **Sesli Anlatım**: Sayfa değiştirildiğinde, önceki ses otomatik olarak durdurulur ve yeni sayfanın sesi çalınır
-- **Ses Önbelleği**: Daha önce oluşturulan ses dosyaları geçici olarak saklanır, bu sayede aynı sayfaya döndüğünüzde tekrar yüklenmez
+- **Ses Önbelleği**: Tüm ses dosyaları önceden oluşturulup saklanır, sayfa geçişlerinde anında çalınabilir
 
 ### Test
 

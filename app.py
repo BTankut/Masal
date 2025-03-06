@@ -319,24 +319,27 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         # Gemini API ile devam et
         logger.info("Gemini API ile masal metni oluşturuluyor...")
         
-        # Desteklenen modelleri listele
-        try:
-            models = genai.list_models()
-            logger.info(f"Kullanılabilir modeller: {[model.name for model in models]}")
-        except Exception as e:
-            logger.warning(f"Model listesi alınamadı: {str(e)}")
+        # Desteklenen modelleri kullan
+        logger.info("Gemini modeli kullanılıyor...")
         
-        # Doğru model adını kullan (güncel API'ye göre)
+        # İlk tercih edilen model
         try:
-            model = genai.GenerativeModel("models/gemini-1.5-pro")
+            model = genai.GenerativeModel("models/gemini-2.0-flash-001")
+            logger.info("models/gemini-2.0-flash-001 modeli başarıyla yüklendi")
         except Exception as e1:
-            logger.warning(f"models/gemini-1.5-pro modeli yüklenemedi: {str(e1)}")
+            logger.warning(f"models/gemini-2.0-flash-001 modeli yüklenemedi: {str(e1)}")
+            
+            # İkinci tercih edilen model
             try:
-                model = genai.GenerativeModel("models/gemini-pro")
+                model = genai.GenerativeModel("models/gemini-2.0-flash-lite-001")
+                logger.info("models/gemini-2.0-flash-lite-001 modeli başarıyla yüklendi")
             except Exception as e2:
-                logger.warning(f"models/gemini-pro modeli yüklenemedi: {str(e2)}")
+                logger.warning(f"models/gemini-2.0-flash-lite-001 modeli yüklenemedi: {str(e2)}")
+                
+                # Son çare olarak bilinen çalışan modeli dene
                 try:
-                    model = genai.GenerativeModel("gemini-pro")
+                    model = genai.GenerativeModel("models/gemini-1.5-pro")
+                    logger.info("models/gemini-1.5-pro modeli başarıyla yüklendi")
                 except Exception as e3:
                     logger.error(f"Hiçbir Gemini modeli yüklenemedi: {str(e3)}")
                     if not openai_client:
@@ -572,15 +575,34 @@ def generate_image_with_dalle(prompt):
         return generate_image_with_gemini(prompt)
 
 def generate_image_with_gemini(section_text):
-    """Gemini API kullanarak görsel oluşturur (deneysel)"""
+    """Gemini API kullanarak görsel oluşturur"""
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # İlk tercih edilen model
+        try:
+            model = genai.GenerativeModel("models/gemini-2.0-flash-001")
+            logger.info("Görsel için models/gemini-2.0-flash-001 modeli kullanılıyor")
+        except Exception as e1:
+            logger.warning(f"Görsel için models/gemini-2.0-flash-001 modeli yüklenemedi: {str(e1)}")
+            
+            # İkinci tercih edilen model
+            try:
+                model = genai.GenerativeModel("models/gemini-2.0-flash-lite-001")
+                logger.info("Görsel için models/gemini-2.0-flash-lite-001 modeli kullanılıyor")
+            except Exception as e2:
+                logger.warning(f"Görsel için models/gemini-2.0-flash-lite-001 modeli yüklenemedi: {str(e2)}")
+                
+                # Son çare olarak bilinen çalışan modeli dene
+                model = genai.GenerativeModel("models/gemini-1.5-pro")
+                logger.info("Görsel için models/gemini-1.5-pro modeli kullanılıyor")
+        
         prompt = f"""
         Lütfen aşağıdaki metne uygun, çocuk kitabı tarzında, renkli ve sevimli bir illüstrasyon oluştur:
         
         {section_text}
         
-        İllüstrasyon 2-3 yaş arası çocuklar için uygun olmalı.
+        İllüstrasyon 3-7 yaş arası çocuklar için uygun, canlı renkli ve detaylı olmalı.
+        Tarz olarak Disney/Pixar animasyon filmlerine benzer, sevimli karakterler içermeli.
+        Görsel yüksek çözünürlüklü ve net olmalı.
         """
         
         response = model.generate_content(prompt)

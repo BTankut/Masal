@@ -550,6 +550,60 @@ input:focus, select:focus, textarea:focus {
     border-radius: 10px;
 }
 
+.loading-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.progress-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.progress-label {
+    color: white;
+    font-size: 16px;
+    margin-right: 15px;
+}
+
+.progress-status {
+    color: var(--highlight-color);
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.progress-status i {
+    margin-right: 5px;
+}
+
+.status-pending {
+    color: #f8f9fa;
+    opacity: 0.7;
+}
+
+.status-loading {
+    color: #17a2b8;
+}
+
+.status-complete {
+    color: #28a745;
+}
+
+.status-error {
+    color: #dc3545;
+}
+
 .error-message {
     display: none;
     background-color: var(--error-color);
