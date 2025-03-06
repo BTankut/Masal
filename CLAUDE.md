@@ -36,8 +36,13 @@
 - **Dokümantasyon**: Tüm fonksiyon/sınıflar için docstring
 - **Loglama**:
   - Her oturum için benzersiz log dosyaları (tarih-saat damgalı)
-  - Farklı log seviyeleri: `logger.error/debug/info`
+  - Ayrı log dosyaları: app (INFO ve üstü), debug (tüm loglar), prompt_test
+  - Gelişmiş loglama ve hata izleme: `logger.error/debug/info/warning` 
   - Detaylı hata bilgileri ve stack trace kayıtları
+  - Otomatik log rotasyonu: Dosya başına 10MB ve maksimum 3 yedek
+  - AI işlemlerinin detaylı loglanması: Model yükleme, prompt gönderme, yanıt alma, retry
+  - Kelime sayısı değerlendirmelerinin loglanması: Hedef, gerçekleşen, sapma oranı
+  - Rate limit korumasının loglanması: Özellikle DALL-E için bekleme süreleri
 - **Hatalar**: Spesifik except bloklarını kullan
 - **Güvenlik**: API anahtarları sadece .env dosyasında
 - **Frontend**: Modüler JS, responsive design, `window.log()`
@@ -68,7 +73,12 @@
   6. Başlık EKLEME
   7. Ne bir kelime fazla, ne bir kelime eksik olmalı
   ```
-- **Yeniden Deneme Stratejisi**: Kelime sayısı çok az olduğunda daha katı uyarılarla tekrar dene
+- **Yeniden Deneme Stratejisi**: 
+  - Kelime sayısı çok az olduğunda (%20'den fazla sapma) daha katı uyarılarla tekrar dene
+  - OpenAI ve Gemini için farklı retry stratejileri:
+    - OpenAI: Daha ayrıntılı ve vurgulu prompt ile retry
+    - Gemini: Açık talimatlarla yeniden deneme ve sonuçların karşılaştırmalı değerlendirmesi
+  - Sonuçların detaylı loglanması: İlk ve ikinci deneme sonuçları, iyileşme oranı
 - **API Token Limitleri**: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
 
 ## Proje Yapısı

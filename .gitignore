@@ -1,7 +1,8 @@
-# Environment variables
-.env
+# Log dosyaları
+logs/*.log
+logs/*.log.*
 
-# Python
+# Geçici dosyalar
 __pycache__/
 *.py[cod]
 *$py.class
@@ -27,17 +28,14 @@ var/
 venv/
 ENV/
 
-# Temporary files
-*.mp3
-*.docx
-*.tmp
+# OS X
+.DS_Store
 
-# IDE specific files
+# API Anahtarları
+.env
+
+# IDE Dosyaları
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# OS specific files
-.DS_Store
-Thumbs.db

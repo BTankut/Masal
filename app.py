@@ -423,8 +423,40 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         elif word_count < word_limit * 0.8:  # Kelime sayısı %20'den fazla az ise
             logger.warning(f"Kelime sayısı çok az ({word_count}), istenen: {word_limit}. Yeniden deneniyor...")
             
-            # Gemini API için yeniden denemeye gerek yok, diğer kısımda retry eklemiştik
-            # Bu durumda sadece log bırakıyoruz
+            # Daha sıkı kontrollerle bir retry prompt oluşturalım
+            retry_prompt = f"""
+            GÖREV: Tam olarak {word_limit} kelimeden oluşan bir çocuk masalı yaz.
+
+            ÖNEMLİ TALİMATLAR (DİKKATLİCE UYGULANACAK):
+            1. Hikaye TAM OLARAK {word_limit} kelime içermeli - kelime sayacı kullanarak ÜÇ KEZ sayımı doğrula
+            2. Hikaye şunları içermeli:
+               - Ana karakter: {character_name} adında bir {character_type}
+               - Ortam: {setting}
+               - Tema: {theme}
+            3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
+            4. Basit Türkçe kullan
+            5. Başlık EKLEME
+            6. Kelime sayısını metnin içinde belirtme
+            7. Masal {word_limit} KELİMEDEN NE BİR FAZLA NE BİR EKSİK olmalı
+            """
+            
+            try:
+                logger.info("Gemini ile yeniden deneme yapılıyor...")
+                retry_response = model.generate_content(retry_prompt)
+                retry_text = retry_response.text.strip()
+                
+                # Yeniden deneme sonucunu kontrol et
+                retry_word_count = len(retry_text.split())
+                logger.info(f"Yeniden deneme sonucu kelime sayısı: {retry_word_count}")
+                
+                if abs(retry_word_count - word_limit) < abs(word_count - word_limit):
+                    logger.info(f"Yeniden deneme daha iyi sonuç verdi. Önceki: {word_count}, Yeni: {retry_word_count}, Hedef: {word_limit}")
+                    return retry_text
+                else:
+                    logger.info(f"Yeniden deneme daha iyi sonuç vermedi. Önceki: {word_count}, Yeni: {retry_word_count}, Hedef: {word_limit}")
+            except Exception as retry_error:
+                logger.error(f"Yeniden deneme sırasında hata: {str(retry_error)}")
+                logger.debug(f"Önceki sonuç kullanılıyor (kelime sayısı: {word_count})")
         
         return tale_text
     

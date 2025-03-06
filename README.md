@@ -155,10 +155,12 @@ Tarayıcıda hata ayıklama konsolunu açmak için:
 - **Kelime Sayısı**: AI modelleri tam kelime sayısını üretmekte zorlanabilir (%25-40 sapma olabilir)
 - **Tarayıcı Depolama**: Masal geçmişi maksimum 10 giriş ile sınırlıdır
 - **Ses Önbelleği**: Sayfa başına oluşturulan sesler tarayıcı oturumu boyunca saklanır
-- **Loglar**: Tüm oturum logları `logs/` klasöründe tarih-saat damgalı dosyalarda saklanır
-  - Uygulama logları: `app_YYYY-MM-DD_HH-MM-SS.log`
-  - Debug logları: `debug_YYYY-MM-DD_HH-MM-SS.log`
-  - Prompt test logları: `prompt_test_YYYY-MM-DD_HH-MM-SS.log`
+- **Gelişmiş Loglama Sistemi**: Tüm oturum logları `logs/` klasöründe tarih-saat damgalı dosyalarda saklanır
+  - Uygulama logları: `app_YYYY-MM-DD_HH-MM-SS.log` (INFO ve üstü seviye mesajlar)
+  - Debug logları: `debug_YYYY-MM-DD_HH-MM-SS.log` (DEBUG ve üstü tüm detaylı mesajlar)
+  - Prompt test logları: `prompt_YYYY-MM-DD_HH-MM-SS.log` (Prompt testleri için özel loglar)
+  - Otomatik log rotasyonu: 10MB boyut sınırı ve maksimum 3 yedek dosya
+  - Detaylı AI modeli yanıtları: Retry mekanizması, kelime sayısı kontrolü, model karşılaştırmaları
 
 ## Gelecek Geliştirmeler
 
