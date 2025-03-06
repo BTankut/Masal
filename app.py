@@ -5,6 +5,7 @@ import sys
 import traceback
 import json
 import logging
+import time
 from flask import Flask, render_template, request, jsonify, send_file, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -183,14 +184,20 @@ def generate_audio():
     try:
         data = request.json
         text = data.get('text', '')
+        page = data.get('page', 0)  # Sayfa numarasını al (debug için)
+        
+        logger.info(f"Sayfa {page+1} için ses oluşturma isteği alındı, metin uzunluğu: {len(text)} karakter")
+        logger.debug(f"Sayfa {page+1} metin başlangıcı: {text[:30]}...")
         
         # Ses dosyası oluştur
         audio_path = create_audio(text)
         
+        logger.info(f"Sayfa {page+1} için ses dosyası oluşturuldu: {audio_path}")
+        
         # Ses dosyasını gönder - mimetype belirtiyoruz ve attachment olarak değil normal dosya olarak gönderiyoruz
         return send_file(audio_path, mimetype='audio/mpeg', as_attachment=False)
     except Exception as e:
-        logger.error(f"Ses oluşturma hatası: {str(e)}")
+        logger.error(f"Sayfa {page+1} için ses oluşturma hatası: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
@@ -277,10 +284,20 @@ def create_audio(text):
         with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as f:
             audio_path = f.name
         
+        # Metin içeriğinin uzunluğunu logla
+        text_words = len(text.split())
+        logger.info(f"Ses oluşturulacak metin: {text_words} kelime, {len(text)} karakter")
+        logger.debug(f"Metin başlangıcı: {text[:min(50, len(text))]}...")
+        
         # Metni sese dönüştür - uzun metinler için gTTS kendi içinde parçalama yapıyor
         tts = gTTS(text=text, lang='tr', slow=False)
+        
+        # Dosyaya kaydet
         tts.save(audio_path)
-        logger.info(f"Ses dosyası oluşturuldu: {audio_path}")
+        
+        # Dosya boyutunu kontrol et
+        file_size = os.path.getsize(audio_path)
+        logger.info(f"Ses dosyası oluşturuldu: {audio_path} (Boyut: {file_size} bytes)")
         
         return audio_path
     except Exception as e:
@@ -512,6 +529,20 @@ def generate_image_with_dalle(prompt):
         # Prompt'u çocuk dostu hale getir
         enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında: {prompt}"
         logger.info(f"DALL-E prompt: {enhanced_prompt[:100]}...")
+        
+        # Rate limit kontrolü için basit hız sınırlama
+        # En son DALL-E API çağrısı zamanını kontrol et
+        current_time = time.time()
+        if hasattr(generate_image_with_dalle, 'last_call_time'):
+            time_since_last_call = current_time - generate_image_with_dalle.last_call_time
+            # DALL-E'nin rate limiti dakikada 5 istek olduğu için en az 12 saniye bekleyelim
+            if time_since_last_call < 12:  # Saniye cinsinden bekleme süresi
+                wait_time = 12 - time_since_last_call
+                logger.info(f"DALL-E rate limit koruması: {wait_time:.2f} saniye bekleniyor...")
+                time.sleep(wait_time)
+        
+        # Bu çağrı zamanını kaydet
+        generate_image_with_dalle.last_call_time = time.time()
         
         response = openai_client.images.generate(
             model="dall-e-3",

@@ -109,6 +109,17 @@ masal/
     └── index.html          # Ana uygulama şablonu
 ```
 
+### Sayfalama ve Ses Sistemi
+
+Uygulama, masalları sayfalar halinde gösterir ve her sayfa için özel ses ve görsel içeriği sunar:
+
+- **Sayfa Başına İçerik**: Her sayfa yaklaşık 50 kelime içerir
+- **Sayfa Başına Özel Görsel**: Her sayfa için ayrı AI görsel üretilir
+- **Sayfa Başına Özel Ses**: Her sayfa için ayrı ses dosyası oluşturulur ve oynatılır
+- **Sayfa Gezinme**: İleri/geri butonlarıyla sayfalar arası geçiş yapılabilir
+- **Sesli Anlatım**: Sayfa değiştirildiğinde, önceki ses otomatik olarak durdurulur ve yeni sayfanın sesi çalınır
+- **Ses Önbelleği**: Daha önce oluşturulan ses dosyaları geçici olarak saklanır, bu sayede aynı sayfaya döndüğünüzde tekrar yüklenmez
+
 ### Test
 
 API bağlantılarını test etmek için:
@@ -131,11 +142,13 @@ Tarayıcıda hata ayıklama konsolunu açmak için:
 ## Performans Hususları
 
 - **API Kullanımı**: API sınırlamalarına ve maliyetlerine dikkat edin
-  - DALL-E: Dakikada 5 görsel istek limiti
+  - DALL-E: Dakikada 5 görsel istek limiti (uygulama otomatik olarak hız sınırlaması yapar)
   - OpenAI token limiti: 4096 tokens
 - **Görsel Oluşturma**: Sayfa görsellerinin oluşturulması için 5-15 saniye bekleyin
+- **Ses Oluşturma**: Her sayfa için ilk ziyarette ses dosyası oluşturulur (2-5 saniye)
 - **Kelime Sayısı**: AI modelleri tam kelime sayısını üretmekte zorlanabilir (%25-40 sapma olabilir)
 - **Tarayıcı Depolama**: Masal geçmişi maksimum 10 giriş ile sınırlıdır
+- **Ses Önbelleği**: Sayfa başına oluşturulan sesler tarayıcı oturumu boyunca saklanır
 
 ## Gelecek Geliştirmeler
 

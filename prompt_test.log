@@ -1,0 +1,235 @@
+2025-03-06 00:04:14,240 [INFO] Kelime sayısı testi başlatılıyor: [200, 500] kelime, API: both
+2025-03-06 00:04:14,240 [INFO] 
+================================================================================
+HEDEF KELİME SAYISI: 200
+================================================================================
+2025-03-06 00:04:14,241 [INFO] 
+--- Test ediliyor: Prompt 1 ---
+2025-03-06 00:04:14,241 [INFO] OpenAI API testi...
+2025-03-06 00:04:17,356 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:04:17,364 [INFO] OpenAI Sonucu: 142 kelime (Hedef: 200, Sapma: %29.00, Süre: 3.12s)
+2025-03-06 00:04:17,364 [INFO] Önizleme: Bir zamanlar uzayda, göklerin en parlak yıldızı Mila adında bir bilim insanı yaşardı. Mila, yıldızlar arasında keşif yapmayı çok severdi....
+2025-03-06 00:04:19,370 [INFO] Gemini API testi...
+2025-03-06 00:04:25,237 [INFO] Gemini Sonucu: 116 kelime (Hedef: 200, Sapma: %42.00, Süre: 5.87s)
+2025-03-06 00:04:25,238 [INFO] Önizleme: Mila, uzayda dolaşmayı çok seven küçük bir bilim insanıydı. Bir gün, parlak kırmızı roketiyle yepyeni bir gezegen keşfetmek için yola...
+2025-03-06 00:04:27,244 [INFO] 
+--- Test ediliyor: Prompt 2 ---
+2025-03-06 00:04:27,245 [INFO] OpenAI API testi...
+2025-03-06 00:04:31,485 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:04:31,488 [INFO] OpenAI Sonucu: 143 kelime (Hedef: 200, Sapma: %28.50, Süre: 4.24s)
+2025-03-06 00:04:31,488 [INFO] Önizleme: Uzayın derinliklerinde, Mila adında genç bir bilim insanı yaşardı. Mila, yıldızlar arasında keşif yapmayı çok severdi. Bir gün, uzay gemisiyle...
+2025-03-06 00:04:33,490 [INFO] Gemini API testi...
+2025-03-06 00:04:40,916 [INFO] Gemini Sonucu: 139 kelime (Hedef: 200, Sapma: %30.50, Süre: 7.43s)
+2025-03-06 00:04:40,917 [INFO] Önizleme: Mila, küçük uzay gemisiyle Satürn'ün halkalarına doğru uçuyordu. Heyecanlıydı! Uzay elbisesini giyip geminin kapısını açtı. Dışarıda, rengarenk toz ve buz...
+2025-03-06 00:04:42,923 [INFO] 
+--- Test ediliyor: Prompt 3 ---
+2025-03-06 00:04:42,923 [INFO] OpenAI API testi...
+2025-03-06 00:04:47,562 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:04:47,563 [INFO] OpenAI Sonucu: 146 kelime (Hedef: 200, Sapma: %27.00, Süre: 4.64s)
+2025-03-06 00:04:47,563 [INFO] Önizleme: Bir zamanlar, uzayda Mila adında bir bilim insanı yaşardı. Mila, gezegenleri ve yıldızları keşfetmeyi çok severdi. Bir gün, kendi uzay...
+2025-03-06 00:04:49,570 [INFO] Gemini API testi...
+2025-03-06 00:04:57,085 [INFO] Gemini Sonucu: 135 kelime (Hedef: 200, Sapma: %32.50, Süre: 7.51s)
+2025-03-06 00:04:57,086 [INFO] Önizleme: Mila, parlak mavi uzay gemisinde heyecanla düğmelere basıyordu. Küçük bilim insanımız, yeni gezegenler keşfetmeyi çok seviyordu. Bugünkü hedefi: Mor Gezegen!...
+2025-03-06 00:04:59,089 [INFO] 
+--- Test ediliyor: Prompt 4 ---
+2025-03-06 00:04:59,089 [INFO] OpenAI API testi...
+2025-03-06 00:05:03,229 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:05:03,231 [INFO] OpenAI Sonucu: 114 kelime (Hedef: 200, Sapma: %43.00, Süre: 4.14s)
+2025-03-06 00:05:03,231 [INFO] Önizleme: Mila, bilim insanı olmayı hep istemişti. Bir gün, uzayda keşif yapmak için seçildi. Uzay gemisinde heyecanla gezegenlere doğru ilerledi. İlk...
+2025-03-06 00:05:05,237 [INFO] Gemini API testi...
+2025-03-06 00:05:05,348 [ERROR] Gemini API hatası: 429 Resource has been exhausted (e.g. check quota).
+2025-03-06 00:05:07,350 [INFO] 
+================================================================================
+HEDEF KELİME SAYISI: 500
+================================================================================
+2025-03-06 00:05:07,351 [INFO] 
+--- Test ediliyor: Prompt 1 ---
+2025-03-06 00:05:07,351 [INFO] OpenAI API testi...
+2025-03-06 00:05:07,631 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-03-06 00:05:07,633 [ERROR] OpenAI API hatası: Error code: 400 - {'error': {'message': 'max_tokens is too large: 5000. This model supports at most 4096 completion tokens, whereas you provided 5000.', 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': None}}
+2025-03-06 00:05:09,638 [INFO] Gemini API testi...
+2025-03-06 00:05:09,748 [ERROR] Gemini API hatası: 429 Resource has been exhausted (e.g. check quota).
+2025-03-06 00:05:11,749 [INFO] 
+--- Test ediliyor: Prompt 2 ---
+2025-03-06 00:05:11,749 [INFO] OpenAI API testi...
+2025-03-06 00:05:12,034 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-03-06 00:05:12,035 [ERROR] OpenAI API hatası: Error code: 400 - {'error': {'message': 'max_tokens is too large: 5000. This model supports at most 4096 completion tokens, whereas you provided 5000.', 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': None}}
+2025-03-06 00:05:14,038 [INFO] Gemini API testi...
+2025-03-06 00:05:14,147 [ERROR] Gemini API hatası: 429 Resource has been exhausted (e.g. check quota).
+2025-03-06 00:05:16,153 [INFO] 
+--- Test ediliyor: Prompt 3 ---
+2025-03-06 00:05:16,153 [INFO] OpenAI API testi...
+2025-03-06 00:05:16,540 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-03-06 00:05:16,541 [ERROR] OpenAI API hatası: Error code: 400 - {'error': {'message': 'max_tokens is too large: 5000. This model supports at most 4096 completion tokens, whereas you provided 5000.', 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': None}}
+2025-03-06 00:05:18,546 [INFO] Gemini API testi...
+2025-03-06 00:05:18,650 [ERROR] Gemini API hatası: 429 Resource has been exhausted (e.g. check quota).
+2025-03-06 00:05:20,655 [INFO] 
+--- Test ediliyor: Prompt 4 ---
+2025-03-06 00:05:20,655 [INFO] OpenAI API testi...
+2025-03-06 00:05:20,943 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-03-06 00:05:20,944 [ERROR] OpenAI API hatası: Error code: 400 - {'error': {'message': 'max_tokens is too large: 5000. This model supports at most 4096 completion tokens, whereas you provided 5000.', 'type': 'invalid_request_error', 'param': 'max_tokens', 'code': None}}
+2025-03-06 00:05:22,946 [INFO] Gemini API testi...
+2025-03-06 00:05:41,432 [INFO] Gemini Sonucu: 350 kelime (Hedef: 500, Sapma: %30.00, Süre: 18.49s)
+2025-03-06 00:05:41,432 [INFO] Önizleme: Mila, parlak mavi gözlü, meraklı bir bilim insanıydı. Uzay onun her zaman en büyük hayaliydi. Güneş sistemimizdeki gezegenler, yıldızlar, galaksiler…...
+2025-03-06 00:05:43,438 [INFO] 
+
+--- SONUÇLAR ---
+2025-03-06 00:05:43,439 [INFO] 
+API        Prompt     Hedef      Gerçek     Sapma      Süre      
+2025-03-06 00:05:43,439 [INFO] ------------------------------------------------------------
+2025-03-06 00:05:43,439 [INFO] OpenAI     Prompt 1   200        142        %29.00     3.12s     
+2025-03-06 00:05:43,439 [INFO] Gemini     Prompt 1   200        116        %42.00     5.87s     
+2025-03-06 00:05:43,439 [INFO] OpenAI     Prompt 2   200        143        %28.50     4.24s     
+2025-03-06 00:05:43,439 [INFO] Gemini     Prompt 2   200        139        %30.50     7.43s     
+2025-03-06 00:05:43,440 [INFO] OpenAI     Prompt 3   200        146        %27.00     4.64s     
+2025-03-06 00:05:43,440 [INFO] Gemini     Prompt 3   200        135        %32.50     7.51s     
+2025-03-06 00:05:43,440 [INFO] OpenAI     Prompt 4   200        114        %43.00     4.14s     
+2025-03-06 00:05:43,440 [INFO] Gemini     Prompt 4   500        350        %30.00     18.49s    
+2025-03-06 00:05:43,440 [INFO] 
+--- EN İYİ PROMPTLAR ---
+2025-03-06 00:05:43,440 [INFO] OpenAI için en iyi prompt: Prompt 3 (Sapma: %27.00)
+2025-03-06 00:05:43,440 [INFO] Gemini için en iyi prompt: Prompt 4 (Sapma: %30.00)
+2025-03-06 00:08:32,497 [INFO] Kelime sayısı testi başlatılıyor: [200] kelime, API: both
+2025-03-06 00:08:32,497 [INFO] 
+--- TEST EDİLECEK PROMPT ŞABLONLARI ---
+2025-03-06 00:08:32,497 [INFO] Prompt 1:
+
+    Çocuklar için {word_count} kelimelik bir masal yaz. Masal şu özelliklere sahip olmalı:
+    - Ana karakter: Mila adında bir bilim insanı
+    - Ortam: uzay
+    - Tema: keşif
+    - Masal eğitici ve çocuk dostu olmalı
+    - Karmaşık kelimeler kullanma, 7-10 yaş arası çocukların anlayabileceği dilde olsun
+    - Türkçe olarak yaz
+    - Sadece masal metnini döndür, başlık veya açıklama ekleme
+    
+--------------------------------------------------
+2025-03-06 00:08:32,497 [INFO] Prompt 2:
+
+    Çocuklar için TAM OLARAK {word_count} KELİMELİK bir masal yaz. Kelime sayısı {word_count} olmalı.
+    - Ana karakter: Mila adında bir bilim insanı
+    - Ortam: uzay
+    - Tema: keşif
+    - Masal eğitici ve çocuk dostu olmalı
+    - Karmaşık kelimeler kullanma
+    - Türkçe olarak yaz
+    - Sadece masal metnini döndür, başlık veya açıklama ekleme
+    - ÖNEMLİ: Masal tam olarak {word_count} kelime içermeli, daha fazla veya daha az değil
+    
+--------------------------------------------------
+2025-03-06 00:08:32,497 [INFO] Prompt 3:
+
+    Çocuklar için bir masal yaz. Masal ŞU KURALLARI TAM OLARAK takip etmeli:
+    1. Tam olarak {word_count} kelime içermeli, kelime sayacı kullanarak kontrol et
+    2. Ana karakter: Mila adında bir bilim insanı olmalı
+    3. Ortam: Uzay gemisi ve gezegenler
+    4. Tema: Keşif ve bilim
+    5. Eğitici ve çocuk dostu olmalı
+    7. Türkçe yazılmalı
+    8. Başlık veya kelime sayısı bildirimi içermemeli
+    
+    Kesinlikle {word_count} kelime kullan. Daha fazla veya daha az değil.
+    
+--------------------------------------------------
+2025-03-06 00:08:32,497 [INFO] Prompt 4:
+
+    [SİSTEM] Sen kelime sayısı kısıtlamalarına tam olarak uyan bir çocuk hikayesi yazarısın. 
+    Tam olarak istenen kelime sayısında hikayeler üretirsin - kelime sayacı kullanırsın.
+    
+    [KULLANICI] Tam olarak {word_count} kelimeden oluşan bir uzay macerası yaz. 
+    Mila adında bir bilim insanı hakkında olsun. 
+    Uzayda geçsin ve keşif teması içersin.
+    Çocuk dostu ve eğitici olsun. 
+    Basit dil kullan.
+    Türkçe yaz.
+    Kelime sayısı: {word_count} (Lütfen tam bu sayıda kel. kullan, daha fazla/az değil)
+    
+--------------------------------------------------
+2025-03-06 00:08:32,497 [INFO] Prompt 5:
+
+    GÖREV: Tam olarak {word_count} kelimeden oluşan bir çocuk masalı yaz.
+
+    ÖNEMLİ TALİMATLAR:
+    1. Hikaye TAM OLARAK {word_count} kelime içermeli
+    2. Hikaye şunları içermeli:
+       - Ana karakter: Mila adında bir bilim insanı
+       - Ortam: Uzay
+       - Tema: Keşif ve bilim
+    3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
+    4. Basit Türkçe kullan
+    5. Kelime sayımını üç kez kontrol et
+    6. Başlık EKLEME
+    7. Ne bir kelime fazla, ne bir kelime eksik olmalı
+
+    Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {word_count} kelimedir" gibi ifadeler kullanma).
+    
+--------------------------------------------------
+2025-03-06 00:08:32,498 [INFO] 
+================================================================================
+HEDEF KELİME SAYISI: 200
+================================================================================
+2025-03-06 00:08:32,498 [INFO] 
+--- Test ediliyor: Prompt 1 ---
+2025-03-06 00:08:32,498 [INFO] OpenAI API testi...
+2025-03-06 00:08:36,628 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:08:36,634 [INFO] OpenAI Sonucu: 128 kelime (Hedef: 200, Sapma: %36.00, Süre: 4.14s)
+2025-03-06 00:08:36,634 [INFO] Önizleme: Bir zamanlar uzayda, parlak yıldızların arasında küçük bir gezegen vardı. Bu gezegenin adı Aydınlık Gezegen'di. Aydınlık Gezegen'i keşfetmeye kararlı, meraklı...
+2025-03-06 00:08:38,640 [INFO] Gemini API testi...
+2025-03-06 00:08:45,644 [INFO] Gemini Sonucu: 124 kelime (Hedef: 200, Sapma: %38.00, Süre: 7.00s)
+2025-03-06 00:08:45,645 [INFO] Önizleme: Mila, küçük uzay gemisinde heyecanla yıldızlara bakıyordu. Kırmızı, mavi, yeşil, her renkten yıldızlar parlıyordu. Mila bir bilim insanıydı ve yeni...
+2025-03-06 00:08:47,646 [INFO] 
+--- Test ediliyor: Prompt 2 ---
+2025-03-06 00:08:47,647 [INFO] OpenAI API testi...
+2025-03-06 00:08:51,276 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:08:51,279 [INFO] OpenAI Sonucu: 115 kelime (Hedef: 200, Sapma: %42.50, Süre: 3.63s)
+2025-03-06 00:08:51,279 [INFO] Önizleme: Uzayda yaşayan küçük bir bilim insanı olan Mila, meraklı ve cesurdu. Bir gün, uzay gemisiyle keşfe çıktı. Yıldızların arasında gezinirken,...
+2025-03-06 00:08:53,281 [INFO] Gemini API testi...
+2025-03-06 00:09:00,491 [INFO] Gemini Sonucu: 135 kelime (Hedef: 200, Sapma: %32.50, Süre: 7.21s)
+2025-03-06 00:09:00,491 [INFO] Önizleme: Mila, küçük uzay gemisiyle yıldızlar arasında süzülüyordu. Meraklı bir bilim insanı olan Mila, yeni gezegenler keşfetmeyi çok severdi. Bir gün,...
+2025-03-06 00:09:02,497 [INFO] 
+--- Test ediliyor: Prompt 3 ---
+2025-03-06 00:09:02,498 [INFO] OpenAI API testi...
+2025-03-06 00:09:05,712 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:09:05,714 [INFO] OpenAI Sonucu: 140 kelime (Hedef: 200, Sapma: %30.00, Süre: 3.22s)
+2025-03-06 00:09:05,714 [INFO] Önizleme: Bir zamanlar, uzayda Mila adında bir bilim insanı yaşardı. Mila, meraklı ve cesurdu. Bir gün, kendi icat ettiği uzay gemisiyle...
+2025-03-06 00:09:07,720 [INFO] Gemini API testi...
+2025-03-06 00:09:15,339 [INFO] Gemini Sonucu: 134 kelime (Hedef: 200, Sapma: %33.00, Süre: 7.62s)
+2025-03-06 00:09:15,340 [INFO] Önizleme: Mila, parlak mavi uzay gemisinde heyecanla kemerini bağladı. Görevi, yeni gezegenler keşfetmekti. Teleskopundan pembe bir gezegen gördü. "Çilek Gezegeni!" diye...
+2025-03-06 00:09:17,343 [INFO] 
+--- Test ediliyor: Prompt 4 ---
+2025-03-06 00:09:17,344 [INFO] OpenAI API testi...
+2025-03-06 00:09:21,279 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:09:21,281 [INFO] OpenAI Sonucu: 124 kelime (Hedef: 200, Sapma: %38.00, Süre: 3.94s)
+2025-03-06 00:09:21,281 [INFO] Önizleme: Mila, minik bir bilim insanıydı ve uzayı keşfetmeye kararlıydı. Bir gün, parlak yıldızların arasında ilerlerken küçük ama cesur roketiyle yıldızlar...
+2025-03-06 00:09:23,286 [INFO] Gemini API testi...
+2025-03-06 00:09:31,015 [INFO] Gemini Sonucu: 139 kelime (Hedef: 200, Sapma: %30.50, Süre: 7.73s)
+2025-03-06 00:09:31,015 [INFO] Önizleme: Mila, parlak bir bilim insanıydı. Uzay gemisinde, parıldayan yıldızlar arasında süzülüyordu. Görevi, yeni gezegenler keşfetmekti. Teleskobuyla uzayın derinliklerine baktı. Aniden,...
+2025-03-06 00:09:33,020 [INFO] 
+--- Test ediliyor: Prompt 5 ---
+2025-03-06 00:09:33,020 [INFO] OpenAI API testi...
+2025-03-06 00:09:38,481 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-06 00:09:38,483 [INFO] OpenAI Sonucu: 149 kelime (Hedef: 200, Sapma: %25.50, Süre: 5.46s)
+2025-03-06 00:09:38,483 [INFO] Önizleme: **Uzay Yolculuğu** Güneş Sistemi'nde, küçük bir gezegen olan Merkur'de yaşayan Mila, parlak zekasıyla tanınıyordu. Bilim ve keşif onun tutkusu haline...
+2025-03-06 00:09:40,486 [INFO] Gemini API testi...
+2025-03-06 00:09:48,004 [INFO] Gemini Sonucu: 139 kelime (Hedef: 200, Sapma: %30.50, Süre: 7.52s)
+2025-03-06 00:09:48,004 [INFO] Önizleme: Mila'nın Uzay Macerası Mila, küçük bir bilim insanıydı. En büyük hayali uzayı keşfetmekti. Bir gün, kendi yaptığı roketiyle uzaya fırladı!...
+2025-03-06 00:09:50,011 [INFO] 
+
+--- SONUÇLAR ---
+2025-03-06 00:09:50,011 [INFO] 
+API        Prompt     Hedef      Gerçek     Sapma      Süre      
+2025-03-06 00:09:50,011 [INFO] ------------------------------------------------------------
+2025-03-06 00:09:50,012 [INFO] OpenAI     Prompt 1   200        128        %36.00     4.14s     
+2025-03-06 00:09:50,012 [INFO] Gemini     Prompt 1   200        124        %38.00     7.00s     
+2025-03-06 00:09:50,012 [INFO] OpenAI     Prompt 2   200        115        %42.50     3.63s     
+2025-03-06 00:09:50,012 [INFO] Gemini     Prompt 2   200        135        %32.50     7.21s     
+2025-03-06 00:09:50,012 [INFO] OpenAI     Prompt 3   200        140        %30.00     3.22s     
+2025-03-06 00:09:50,012 [INFO] Gemini     Prompt 3   200        134        %33.00     7.62s     
+2025-03-06 00:09:50,012 [INFO] OpenAI     Prompt 4   200        124        %38.00     3.94s     
+2025-03-06 00:09:50,012 [INFO] Gemini     Prompt 4   200        139        %30.50     7.73s     
+2025-03-06 00:09:50,013 [INFO] OpenAI     Prompt 5   200        149        %25.50     5.46s     
+2025-03-06 00:09:50,013 [INFO] Gemini     Prompt 5   200        139        %30.50     7.52s     
+2025-03-06 00:09:50,013 [INFO] 
+--- EN İYİ PROMPTLAR ---
+2025-03-06 00:09:50,013 [INFO] OpenAI için en iyi prompt: Prompt 5 (Sapma: %25.50)
+2025-03-06 00:09:50,013 [INFO] Gemini için en iyi prompt: Prompt 4 (Sapma: %30.50)

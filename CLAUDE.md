@@ -13,7 +13,9 @@
 ### Sayfalama Sistemi
 - Her sayfada 50 kelime gösteriliyor
 - Her sayfa için özel görsel oluşturuluyor
+- Her sayfa için özel ses dosyası oluşturuluyor ve önbellekleniyor
 - Sayfa navigasyon butonları (ileri, geri)
+- Sayfa değişikliklerinde ses dosyası otomatik olarak değişiyor
 
 ## Çalıştırma & Test Komutları
 - Başlat: `python app.py` (http://localhost:8500)
@@ -34,7 +36,9 @@
 - **Güvenlik**: API anahtarları sadece .env dosyasında
 - **Frontend**: Modüler JS, responsive design, `window.log()`
 - **AI İçerik**: Daima çocuk dostu ve yaşa uygun
-- **API Limitleri**: `max_tokens` değerlerinde OpenAI sınırını aşmamaya dikkat et (4096)
+- **API Limitleri**: 
+  - OpenAI `max_tokens`: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
+  - DALL-E: Dakikada 5 istek limiti (generate_image_with_dalle'de 12sn bekleme)
 
 ## AI Prompt Optimizasyonu
 - **En İyi Prompt Stili**: 
@@ -80,3 +84,5 @@
   - Sayfalama: 50 kelime/sayfa optimum
   - Görsel-metin paralelliği: 450px yükseklikte containerlar
   - Word belgesi oluşturma: Görsel-metin bütünlüğü
+  - Ses önbelleği: Her sayfa için oluşturulan ses dosyaları tarayıcıda saklanır
+  - Medya senkronizasyonu: Sayfa değişikliklerinde görsel ve ses dosyaları otomatik olarak güncellenir

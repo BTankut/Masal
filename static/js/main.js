@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let taleData = null;
     let talePages = [];
     let taleImages = [];
+    let taleAudios = {}; // Sayfa ses dosyalarını saklamak için obje
     let totalPages = 0;
     let taleHistory = [];
     const MAX_HISTORY = 5;
@@ -505,13 +506,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sayfa değiştirme butonlarına tıklama olayları
     document.getElementById('prev-page').addEventListener('click', function() {
         if (currentPage > 0) {
-            displayPage(currentPage - 1);
+            // Önce mevcut sesi durdur
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer = null;
+                if (audioURL) {
+                    URL.revokeObjectURL(audioURL);
+                    audioURL = null;
+                }
+                document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-play"></i>';
+                isPlaying = false;
+                clearInterval(audioProgressInterval);
+            }
+            
+            // Sonra sayfayı değiştir
+            const newPage = currentPage - 1;
+            displayPage(newPage);
+            
+            // Eğer sesli okuma aktifse, yeni sayfa için ses dosyasını çal
+            if (document.getElementById('audio-player-container').style.display === 'block') {
+                log("Önceki sayfaya geçildi, yeni ses dosyası yükleniyor...");
+                setTimeout(() => readTaleAloud(), 100);
+            }
         }
     });
     
     document.getElementById('next-page').addEventListener('click', function() {
         if (currentPage < totalPages - 1) {
-            displayPage(currentPage + 1);
+            // Önce mevcut sesi durdur
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer = null;
+                if (audioURL) {
+                    URL.revokeObjectURL(audioURL);
+                    audioURL = null;
+                }
+                document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-play"></i>';
+                isPlaying = false;
+                clearInterval(audioProgressInterval);
+            }
+            
+            // Sonra sayfayı değiştir
+            const newPage = currentPage + 1;
+            displayPage(newPage);
+            
+            // Eğer sesli okuma aktifse, yeni sayfa için ses dosyasını çal
+            if (document.getElementById('audio-player-container').style.display === 'block') {
+                log("Sonraki sayfaya geçildi, yeni ses dosyası yükleniyor...");
+                setTimeout(() => readTaleAloud(), 100);
+            }
         }
     });
     
@@ -678,11 +721,133 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Konsola debug bilgisi yazdır
+        console.log("------------------------------");
+        console.log(`readTaleAloud() çağrıldı - Şu anki sayfa: ${currentPage + 1}`);
+        console.log(`Mevcut sayfanın metni: ${talePages[currentPage].substring(0, 30)}...`);
+        console.log("Önbellekteki ses dosyaları:", Object.keys(taleAudios).map(page => `Sayfa ${parseInt(page) + 1}`));
+        
         // Şu anki sayfadaki metni oku
         const text = talePages[currentPage];
+        
+        // Öncelikle, bu sayfa için zaten oluşturulmuş bir ses dosyası var mı kontrol et
+        if (taleAudios[currentPage] && taleAudios[currentPage].blob) {
+            console.log(`Sayfa ${currentPage + 1} için önbellekte ses dosyası bulundu, doğrudan oynatılıyor`);
+            playAudioFromBlob(taleAudios[currentPage].blob);
+            return;
+        }
+        
+        console.log(`Sayfa ${currentPage + 1} için önbellekte ses dosyası bulunamadı, yeni oluşturuluyor`);
+        
+        // Yeni ses dosyası oluştur
         showLoading(true, "Ses dosyası oluşturuluyor...");
         
         // Daha önce bir ses çalıyorsa durdur ve temizle
+        stopAudioPlayback();
+        
+        // İsteği hazırla
+        fetch('/generate_audio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: text, page: currentPage })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Sunucu hatası: ${response.status}`);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            console.log(`Sayfa ${currentPage + 1} için ses dosyası alındı (${blob.size} bytes)`);
+            
+            // Ses blob'unu kaydet
+            taleAudios[currentPage] = { blob: blob };
+            console.log("Güncellenmiş ses dosyaları:", Object.keys(taleAudios).map(page => `Sayfa ${parseInt(page) + 1}`));
+            
+            // Oynatma fonksiyonunu çağır
+            playAudioFromBlob(blob);
+        })
+        .catch(error => {
+            log("Ses oluşturma hatası", error);
+            showError("Ses oluşturma hatası: " + error.message);
+            showLoading(false);
+        });
+    }
+    
+    // Ses blobu üzerinden oynatma
+    function playAudioFromBlob(blob) {
+        // Daha önce bir ses çalıyorsa durdur ve temizle
+        stopAudioPlayback();
+        
+        console.log(`playAudioFromBlob çağrıldı - Şu anki sayfa: ${currentPage + 1}, blob boyutu: ${blob.size} bytes`);
+        
+        // Audio elementini oluştur
+        audioURL = URL.createObjectURL(blob);
+        audioPlayer = new Audio(audioURL);
+        
+        // Audio nesnesinin sayfa bilgisini kaydet - bu daha sonra debug için yararlı olacak
+        audioPlayer.dataset.page = currentPage;
+        
+        console.log(`Ses URL'si oluşturuldu: ${audioURL}`);
+        
+        // Ses çalar kontrol panelini göster
+        document.getElementById('audio-player-container').style.display = 'block';
+        
+        // Oynatma butonunu güncelle
+        document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-pause"></i>';
+        
+        // Durumları izle
+        audioPlayer.onplay = () => {
+            console.log(`Sayfa ${currentPage + 1} için ses çalmaya başladı`);
+            isPlaying = true;
+            showLoading(false);
+        };
+        
+        audioPlayer.onpause = () => {
+            console.log("Ses duraklatıldı");
+            isPlaying = false;
+        };
+        
+        audioPlayer.onended = () => {
+            console.log("Ses çalma tamamlandı");
+            isPlaying = false;
+            document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-play"></i>';
+            clearInterval(audioProgressInterval);
+        };
+        
+        audioPlayer.onerror = (e) => {
+            console.error("Ses çalma hatası", e);
+            showError("Ses çalınamadı");
+            showLoading(false);
+            isPlaying = false;
+            if (audioURL) {
+                URL.revokeObjectURL(audioURL);
+                audioURL = null;
+            }
+        };
+        
+        // Ses dosyasının yüklendiğinden emin olmak için
+        audioPlayer.onloadeddata = () => {
+            console.log(`Ses verisi yüklendi, çalınmaya hazır. Süre: ${audioPlayer.duration} sn`);
+        };
+        
+        // Oynatmayı başlat
+        audioPlayer.play().then(() => {
+            console.log(`Sayfa ${currentPage + 1} için ses çalma başladı`);
+        }).catch(e => {
+            console.error("Ses oynatma hatası", e);
+            showError("Ses oynatma başlatılamadı: " + e.message);
+            showLoading(false);
+        });
+        
+        // İlerleme çubuğunu başlat
+        updateProgressBar();
+    }
+    
+    // Ses çalmayı durdur ve temizle
+    function stopAudioPlayback() {
         if (audioPlayer) {
             audioPlayer.pause();
             audioPlayer = null;
@@ -693,75 +858,23 @@ document.addEventListener('DOMContentLoaded', function() {
             audioURL = null;
         }
         
-        // İsteği hazırla
-        fetch('/generate_audio', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: text })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Sunucu hatası: ${response.status}`);
-            }
-            return response.blob();
-        })
-        .then(blob => {
-            log("Ses dosyası alındı, oynatılıyor...");
-            
-            // Audio elementini oluştur
-            audioURL = URL.createObjectURL(blob);
-            audioPlayer = new Audio(audioURL);
-            
-            // Ses çalar kontrol panelini göster
-            document.getElementById('audio-player-container').style.display = 'block';
-            
-            // Oynatma butonunu güncelle
-            document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-pause"></i>';
-            
-            // Durumları izle
-            audioPlayer.onplay = () => {
-                log("Ses çalmaya başladı");
-                isPlaying = true;
-                showLoading(false);
-            };
-            
-            audioPlayer.onpause = () => {
-                log("Ses duraklatıldı");
-                isPlaying = false;
-            };
-            
-            audioPlayer.onended = () => {
-                log("Ses çalma tamamlandı");
-                isPlaying = false;
-                document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-play"></i>';
-                clearInterval(audioProgressInterval);
-            };
-            
-            audioPlayer.onerror = (e) => {
-                log("Ses çalma hatası", e);
-                showError("Ses çalınamadı");
-                showLoading(false);
-                isPlaying = false;
-                URL.revokeObjectURL(audioURL);
-            };
-            
-            // Oynatmayı başlat
-            audioPlayer.play().catch(e => {
-                log("Ses oynatma hatası", e);
-                showError("Ses oynatma başlatılamadı: " + e.message);
-                showLoading(false);
-            });
-            
-            // İlerleme çubuğunu başlat
-            updateProgressBar();
-        })
-        .catch(error => {
-            log("Ses oluşturma hatası", error);
-            showError("Ses oluşturma hatası: " + error.message);
-            showLoading(false);
-        });
+        // İlerleme çubuğunu sıfırla
+        clearInterval(audioProgressInterval);
+    }
+    
+    // Artık bu fonksiyon kullanılmıyor - sayfa değiştirme butonlarında direkt olarak ses kontrolü yapılıyor
+    function handlePageAudioChange() {
+        log(`Sayfa değişikliği: ${currentPage + 1}. sayfa için ses kontrolü`);
+        
+        // Önceki sesi durdur
+        stopAudioPlayback();
+        
+        // Ses kontrol panelini güncelle
+        document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-play"></i>';
+        isPlaying = false;
+        
+        // Yeni sayfa için sesi oluştur ve oynat
+        readTaleAloud();
     }
     
     // Sesli okuma butonuna tıklama
