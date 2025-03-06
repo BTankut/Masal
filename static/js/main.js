@@ -769,7 +769,14 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({
                 tale_text: fullText,
-                images: taleImages.map(img => img.url) || []
+                images: taleImages.map(img => {
+                    // Base64 görüntü verisi çıkarılıyor
+                    if (img.url && img.url.startsWith('data:image/')) {
+                        // data:image/jpeg;base64,/9j/... formatından sadece base64 kısmını al
+                        return img.url.split(',')[1];
+                    }
+                    return null; // Geçersiz URL'leri filtrele
+                }).filter(img => img !== null) || []
             }),
         })
         .then(response => {
@@ -797,7 +804,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Kaydet butonuna tıklama
-    saveButton.addEventListener('click', saveWord);
+    saveButton.addEventListener('click', function() {
+        // Bu aksiyon için log kaydı
+        console.log("Word olarak kaydet butonuna tıklandı");
+        // Uyarı göster
+        showLoading(true, "Word belgesi hazırlanıyor...");
+        // Word dosyasını kaydet
+        saveWord();
+    });
     
     // Sesli oku
     // Ses çalma için global değişkenler

@@ -213,8 +213,13 @@ def save_word():
         tale_text = data.get('tale_text', '')
         images = data.get('images', [])
         
+        # İstek değerlerini logla
+        logger.info(f"Word dosyası oluşturma isteği alındı - Metin uzunluğu: {len(tale_text)} karakter, Görsel sayısı: {len(images)}")
+        
         # Word dosyası oluştur
         doc_path = create_word_document(tale_text, images)
+        
+        logger.info(f"Word dosyası başarıyla oluşturuldu: {doc_path}")
         
         # Word dosyasını gönder
         return send_file(doc_path, as_attachment=True, download_name='masal.docx')
@@ -291,30 +296,55 @@ def create_word_document(tale_text, images):
         # Başlık ekle
         doc.add_heading('Masal Dünyası', 0)
         
-        # Metni ekle
-        doc.add_paragraph(tale_text)
+        # Masal metnini ve görselleri ekle
+        paragraphs = tale_text.split('\n\n')
         
-        # Görselleri ekle
-        for i, image_data in enumerate(images):
-            # Base64 görselini dosyaya dönüştür
-            image_bytes = base64.b64decode(image_data)
-            image_stream = io.BytesIO(image_bytes)
-            
-            # Geçici dosya oluştur
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-                temp_path = temp_file.name
-                temp_file.write(image_bytes)
-            
-            # Görseli ekle
-            doc.add_picture(temp_path, width=Inches(6))
-            
-            # Geçici dosyayı sil
-            os.unlink(temp_path)
+        # Eğer görseller ve paragraflar varsa, her ikisini birleştir
+        if images and paragraphs:
+            # Sayfaları ve görselleri yan yana ekle
+            for i, paragraph_text in enumerate(paragraphs):
+                # Metni ekle
+                p = doc.add_paragraph(paragraph_text)
+                
+                # Sayfa sonuna uygun görsel varsa ekle
+                if i < len(images):
+                    try:
+                        # Base64 görselini dosyaya dönüştür
+                        image_data = images[i]
+                        logger.info(f"Görsel {i+1} işleniyor - Veri uzunluğu: {len(image_data[:20])}...")
+                        
+                        image_bytes = base64.b64decode(image_data)
+                        
+                        # Geçici dosya oluştur
+                        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+                            temp_path = temp_file.name
+                            temp_file.write(image_bytes)
+                        
+                        # Görseli ekle
+                        try:
+                            doc.add_picture(temp_path, width=Inches(6))
+                            logger.info(f"Görsel {i+1} Word belgesine eklendi")
+                        except Exception as img_error:
+                            logger.error(f"Görsel {i+1} eklenirken hata: {str(img_error)}")
+                        
+                        # Geçici dosyayı sil
+                        os.unlink(temp_path)
+                    except Exception as img_e:
+                        logger.error(f"Görsel {i+1} işlenirken hata: {str(img_e)}")
+                
+                # Sayfa sonu ekle (son sayfa hariç)
+                if i < len(paragraphs) - 1:
+                    doc.add_page_break()
+        else:
+            # Sadece metni ekle (görsel yoksa)
+            doc.add_paragraph(tale_text)
+            logger.info("Görsel olmadığı için sadece metin eklendi")
         
         # Word dosyasını kaydet
         doc_path = tempfile.mktemp(suffix='.docx')
         doc.save(doc_path)
         
+        logger.info(f"Word belgesi oluşturuldu: {doc_path}, Boyut: {os.path.getsize(doc_path)} bytes")
         return doc_path
     except Exception as e:
         logger.error(f"Word dosyası oluşturma hatası: {e}")
