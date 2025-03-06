@@ -12,17 +12,43 @@ import re
 import time
 import logging
 import argparse
+import datetime
+import sys
+from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 import google.generativeai as genai
 from openai import OpenAI
 
-# Loglama ayarları
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[logging.StreamHandler(), logging.FileHandler("prompt_test.log")]
+# Log klasörünü oluştur
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+os.makedirs(logs_dir, exist_ok=True)
+
+# Geçerli oturum için benzersiz bir log dosya ismi oluştur
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+prompt_log_path = os.path.join(logs_dir, f"prompt_test_{timestamp}.log")
+
+# Loglama yapılandırması
+logger = logging.getLogger("prompt_test")
+logger.setLevel(logging.INFO)
+
+# Log formatı
+log_format = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+
+# Console handler
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(log_format)
+
+# Log dosyası
+file_handler = RotatingFileHandler(
+    prompt_log_path, maxBytes=10*1024*1024, backupCount=3
 )
-logger = logging.getLogger(__name__)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(log_format)
+
+# Handler'ları logger'a ekle
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 # .env dosyasından API anahtarlarını yükle
 load_dotenv()

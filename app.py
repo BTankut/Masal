@@ -6,6 +6,8 @@ import traceback
 import json
 import logging
 import time
+import datetime
+from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, jsonify, send_file, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -18,15 +20,56 @@ from gtts import gTTS
 from docx import Document
 from docx.shared import Inches
 
+# Log klasörünü oluştur
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+os.makedirs(logs_dir, exist_ok=True)
+
+# Geçerli oturum için benzersiz bir log dosya ismi oluştur
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+app_log_path = os.path.join(logs_dir, f"app_{timestamp}.log")
+debug_log_path = os.path.join(logs_dir, f"debug_{timestamp}.log")
+prompt_log_path = os.path.join(logs_dir, f"prompt_{timestamp}.log")
+
 # Loglama yapılandırması
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
+logger = logging.getLogger("masal_app")
+logger.setLevel(logging.DEBUG)
+
+# Log formatı
+log_format = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+
+# Console handler
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(log_format)
+
+# Normal log dosyası (INFO ve üstü seviye mesajlar için)
+file_handler = RotatingFileHandler(
+    app_log_path, maxBytes=10*1024*1024, backupCount=3
 )
-logger = logging.getLogger(__name__)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(log_format)
+
+# Debug log dosyası (tüm detaylı loglar için)
+debug_file_handler = RotatingFileHandler(
+    debug_log_path, maxBytes=10*1024*1024, backupCount=3
+)
+debug_file_handler.setLevel(logging.DEBUG)
+debug_file_handler.setFormatter(log_format)
+
+# Handlerleri loggera ekle
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+logger.addHandler(debug_file_handler)
+
+# Promt testi için ayrı bir logger
+prompt_logger = logging.getLogger("prompt_test")
+prompt_logger.setLevel(logging.INFO)
+prompt_handler = RotatingFileHandler(
+    prompt_log_path, maxBytes=10*1024*1024, backupCount=3
+)
+prompt_handler.setFormatter(log_format)
+prompt_logger.addHandler(prompt_handler)
+prompt_logger.addHandler(console_handler)
 
 # .env dosyasından API anahtarlarını yükle
 load_dotenv()

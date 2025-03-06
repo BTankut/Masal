@@ -98,6 +98,10 @@ masal/
 ├── test_gemini.py          # Gemini API test dosyası
 ├── test_openai.py          # OpenAI API test dosyası
 ├── test_prompt_length.py   # Prompt formülü test aracı
+├── logs/                   # Log dosyaları klasörü (otomatik oluşturulur)
+│   ├── app_*.log           # Uygulama logları (INFO ve üstü)
+│   ├── debug_*.log         # Detaylı debug logları
+│   └── prompt_test_*.log   # Prompt testi logları
 ├── static/
 │   ├── css/
 │   │   └── style.css       # Uygulama stil dosyası
@@ -151,6 +155,10 @@ Tarayıcıda hata ayıklama konsolunu açmak için:
 - **Kelime Sayısı**: AI modelleri tam kelime sayısını üretmekte zorlanabilir (%25-40 sapma olabilir)
 - **Tarayıcı Depolama**: Masal geçmişi maksimum 10 giriş ile sınırlıdır
 - **Ses Önbelleği**: Sayfa başına oluşturulan sesler tarayıcı oturumu boyunca saklanır
+- **Loglar**: Tüm oturum logları `logs/` klasöründe tarih-saat damgalı dosyalarda saklanır
+  - Uygulama logları: `app_YYYY-MM-DD_HH-MM-SS.log`
+  - Debug logları: `debug_YYYY-MM-DD_HH-MM-SS.log`
+  - Prompt test logları: `prompt_test_YYYY-MM-DD_HH-MM-SS.log`
 
 ## Gelecek Geliştirmeler
 

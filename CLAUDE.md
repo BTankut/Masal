@@ -26,7 +26,7 @@
 - Prompt testi: `python test_prompt_length.py --counts 200 500 --api both`
 - API testleri: `python test_gemini.py` veya `python test_openai.py`
 - Ses dosyaları: `python download_sounds.py`
-- Log dosyaları: `app.log` ve `app_debug.log`
+- Log dosyaları: `logs/` klasöründe tarih-saat damgalı dosyalar oluşturulur (örn: `app_YYYY-MM-DD_HH-MM-SS.log`)
 - Debug modu: Tarayıcıda `Alt+D`
 
 ## Kod Standartları
@@ -34,7 +34,11 @@
 - **Format**: 4 boşluk, max 120 karakter/satır
 - **İmport Sırası**: 1)std lib 2)3rd party 3)local modules
 - **Dokümantasyon**: Tüm fonksiyon/sınıflar için docstring
-- **Hatalar**: Spesifik except, `logger.error/debug/info` kullan
+- **Loglama**:
+  - Her oturum için benzersiz log dosyaları (tarih-saat damgalı)
+  - Farklı log seviyeleri: `logger.error/debug/info`
+  - Detaylı hata bilgileri ve stack trace kayıtları
+- **Hatalar**: Spesifik except bloklarını kullan
 - **Güvenlik**: API anahtarları sadece .env dosyasında
 - **Frontend**: Modüler JS, responsive design, `window.log()`
 - **AI İçerik**: Daima çocuk dostu ve yaşa uygun
@@ -71,6 +75,7 @@
 - `app.py`: Ana Flask sunucusu ve AI entegrasyonu
 - `static/`: Frontend varlıkları (CSS, JS, ses/görüntüler)
 - `templates/`: HTML şablonları
+- `logs/`: Her oturumda oluşturulan tarih-saat damgalı log dosyaları
 - `test_prompt_length.py`: Kelime sayısı prompt testleri
 - `test_gemini.py`, `test_openai.py`: API test modülleri
 - `download_sounds.py`: Ses dosyalarını indirme scripti
