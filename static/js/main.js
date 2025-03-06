@@ -251,6 +251,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Ekstra güvenlik için birkaç milisaniye sonra tekrar displayPage çağıralım
                     setTimeout(() => {
                         displayPage(0);
+                        // Sayfa için ses dosyasını hazırla ama otomatik oynatma yapma
+                        prepareAudioForCurrentPage();
                     }, 100);
                 }, 500);
             }, 500); // Kullanıcının tamamlandığını görmesi için kısa bir bekleme
@@ -714,11 +716,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const newPage = currentPage - 1;
             displayPage(newPage);
             
-            // Ses oynatıcıyı göster ama otomatik oynatma yapma
-            if (document.getElementById('audio-player-container').style.display === 'block') {
-                log("Önceki sayfaya geçildi, ses oynatıcı hazır durumda.");
-                // Otomatik oynatma kaldırıldı, kullanıcı manuel olarak başlatacak
-            }
+            // Ses dosyasını otomatik oynatma yapmadan hazırla
+            prepareAudioForCurrentPage();
         }
     });
     
@@ -741,11 +740,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const newPage = currentPage + 1;
             displayPage(newPage);
             
-            // Ses oynatıcıyı göster ama otomatik oynatma yapma
-            if (document.getElementById('audio-player-container').style.display === 'block') {
-                log("Sonraki sayfaya geçildi, ses oynatıcı hazır durumda.");
-                // Otomatik oynatma kaldırıldı, kullanıcı manuel olarak başlatacak
-            }
+            // Ses dosyasını otomatik oynatma yapmadan hazırla
+            prepareAudioForCurrentPage();
         }
     });
     
@@ -906,7 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Sesli oku fonksiyonu - ana fonksiyon
-    function readTaleAloud() {
+    function readTaleAloud(autoPlay = true) {
         if (!taleData || !talePages || talePages.length === 0) {
             showError('Okunacak masal bulunamadı.');
             return;
@@ -914,7 +910,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Konsola debug bilgisi yazdır
         console.log("------------------------------");
-        console.log(`readTaleAloud() çağrıldı - Şu anki sayfa: ${currentPage + 1}`);
+        console.log(`readTaleAloud() çağrıldı - Şu anki sayfa: ${currentPage + 1}, autoPlay: ${autoPlay}`);
         console.log(`Mevcut sayfanın metni: ${talePages[currentPage].substring(0, 30)}...`);
         console.log("Önbellekteki ses dosyaları:", Object.keys(taleAudios).map(page => `Sayfa ${parseInt(page) + 1}`));
         
@@ -923,8 +919,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Öncelikle, bu sayfa için zaten oluşturulmuş bir ses dosyası var mı kontrol et
         if (taleAudios[currentPage] && taleAudios[currentPage].blob) {
-            console.log(`Sayfa ${currentPage + 1} için önbellekte ses dosyası bulundu, doğrudan oynatılıyor`);
-            playAudioFromBlob(taleAudios[currentPage].blob);
+            console.log(`Sayfa ${currentPage + 1} için önbellekte ses dosyası bulundu, ${autoPlay ? 'otomatik oynatılıyor' : 'oynatma için hazırlanıyor'}`);
+            if (autoPlay) {
+                playAudioFromBlob(taleAudios[currentPage].blob);
+            } else {
+                prepareAudioBlob(taleAudios[currentPage].blob);
+            }
             return;
         }
         
@@ -958,7 +958,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Güncellenmiş ses dosyaları:", Object.keys(taleAudios).map(page => `Sayfa ${parseInt(page) + 1}`));
             
             // Oynatma fonksiyonunu çağır
-            playAudioFromBlob(blob);
+            if (autoPlay) {
+                playAudioFromBlob(blob);
+            } else {
+                prepareAudioBlob(blob);
+            }
         })
         .catch(error => {
             log("Ses oluşturma hatası", error);
@@ -967,12 +971,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Ses blobu üzerinden oynatma
-    function playAudioFromBlob(blob) {
+    // Ses dosyasını hazırla ama otomatik oynatma yapma
+    function prepareAudioBlob(blob) {
         // Daha önce bir ses çalıyorsa durdur ve temizle
         stopAudioPlayback();
         
-        console.log(`playAudioFromBlob çağrıldı - Şu anki sayfa: ${currentPage + 1}, blob boyutu: ${blob.size} bytes`);
+        console.log(`prepareAudioBlob çağrıldı - Şu anki sayfa: ${currentPage + 1}, blob boyutu: ${blob.size} bytes`);
         
         // Audio elementini oluştur
         audioURL = URL.createObjectURL(blob);
@@ -986,8 +990,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ses çalar kontrol panelini göster
         document.getElementById('audio-player-container').style.display = 'block';
         
-        // Oynatma butonunu güncelle
-        document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-pause"></i>';
+        // Oynatma butonunu güncelle - play ikonu göster
+        document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-play"></i>';
         
         // Durumları izle
         audioPlayer.onplay = () => {
@@ -1022,7 +1026,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ses dosyasının yüklendiğinden emin olmak için
         audioPlayer.onloadeddata = () => {
             console.log(`Ses verisi yüklendi, çalınmaya hazır. Süre: ${audioPlayer.duration} sn`);
+            showLoading(false);
         };
+        
+        // İlerleme çubuğunu sıfırla
+        document.getElementById('audio-progress').value = 0;
+    }
+
+    // Ses blobu üzerinden oynatma
+    function playAudioFromBlob(blob) {
+        // Önce hazırla
+        prepareAudioBlob(blob);
+        
+        console.log(`playAudioFromBlob çağrıldı - Şu anki sayfa: ${currentPage + 1}, blob boyutu: ${blob.size} bytes`);
+        
+        // Oynatma butonunu güncelle
+        document.getElementById('audio-play-pause').innerHTML = '<i class="fas fa-pause"></i>';
         
         // Oynatmayı başlat
         audioPlayer.play().then(() => {
@@ -1068,10 +1087,14 @@ document.addEventListener('DOMContentLoaded', function() {
         readTaleAloud();
     }
     
-    // Sesli okuma butonuna tıklama
-    document.getElementById('read-tale').addEventListener('click', function() {
-        readTaleAloud();
-    });
+    // Sayfa yüklendiğinde otomatik olarak ses dosyasını hazırla 
+    // ama oynatma - kullanıcı play butonuna basacak
+    function prepareAudioForCurrentPage() {
+        // Sayfa değişikliğinde ses dosyalarını hazırla
+        if (talePages && talePages.length > 0 && currentPage >= 0 && currentPage < talePages.length) {
+            readTaleAloud(false); // Otomatik oynatma yapmadan hazırla
+        }
+    }
     
     // Masal geçmişi fonksiyonları
     function loadTaleHistory() {
