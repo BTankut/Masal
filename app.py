@@ -587,18 +587,17 @@ def split_text_into_sections(text, words_per_section):
 def generate_image_for_section(section_text, image_api='dalle'):
     """Bölüm metni için görsel oluşturur"""
     try:
-        # Kullanıcı DALL-E'yi seçtiyse ve OpenAI API anahtarı varsa DALL-E kullan
-        if image_api == 'dalle' and openai_client:
+        # Sadece DALL-E kullan, OpenAI API anahtarı kontrol et
+        if openai_client:
             logger.info("DALL-E API kullanılıyor...")
             return generate_image_with_dalle(section_text)
-        # Diğer durumlarda Gemini API ile dene
         else:
-            logger.info("Gemini API kullanılıyor...")
-            return generate_image_with_gemini(section_text)
+            logger.warning("OpenAI API anahtarı yok, placeholder görüntü oluşturuluyor...")
+            return create_placeholder_image(section_text)
     except Exception as e:
         logger.error(f"Görsel oluşturma hatası: {e}")
         logger.error(traceback.format_exc())
-        # Hata durumunda da placeholder görüntü oluştur
+        # Hata durumunda placeholder görüntü oluştur
         return create_placeholder_image(section_text)
 
 def generate_image_with_dalle(prompt):
@@ -645,9 +644,43 @@ def generate_image_with_dalle(prompt):
     except Exception as e:
         logger.error(f"OpenAI ile görsel oluşturma hatası: {e}")
         logger.error(traceback.format_exc())
-        # OpenAI hatası durumunda Gemini ile dene
-        logger.info("DALL-E hatası nedeniyle Gemini API'ye geçiliyor...")
-        return generate_image_with_gemini(prompt)
+        
+        # Rate limit hatası ise, daha uzun süre bekle ve yeniden dene
+        if isinstance(e, openai.RateLimitError):
+            try:
+                logger.info("DALL-E rate limit hatası, 25 saniye bekleniyor ve yeniden deneniyor...")
+                time.sleep(25)  # Rate limit için daha uzun süre bekle
+                
+                # Yeniden dene
+                generate_image_with_dalle.last_call_time = time.time()  # Son çağrı zamanını güncelle
+                
+                response = openai_client.images.generate(
+                    model="dall-e-3",
+                    prompt=enhanced_prompt,
+                    size="1024x1024",
+                    quality="standard",
+                    n=1,
+                    style="vivid"
+                )
+                image_url = response.data[0].url
+                logger.info(f"DALL-E görsel URL'si yeniden deneme sonrası oluşturuldu: {image_url[:50]}...")
+                
+                # Resmi indir
+                image_response = requests.get(image_url)
+                image_data = image_response.content
+                
+                # Base64 formatına dönüştür
+                base64_image = base64.b64encode(image_data).decode('utf-8')
+                logger.info("DALL-E görsel başarıyla oluşturuldu ve Base64 formatına dönüştürüldü (yeniden deneme sonrası).")
+                return base64_image
+                
+            except Exception as retry_error:
+                logger.error(f"DALL-E yeniden deneme hatası: {retry_error}")
+                logger.error(traceback.format_exc())
+        
+        # Hata durumunda placeholder görüntü oluştur
+        logger.info("DALL-E hatası nedeniyle placeholder görüntü oluşturuluyor...")
+        return create_placeholder_image(prompt)
 
 def generate_image_with_gemini(section_text):
     """Gemini API kullanarak görsel oluşturur"""
