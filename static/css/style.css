@@ -709,6 +709,8 @@ input:focus, select:focus, textarea:focus {
     cursor: pointer;
 }
 
+/* Ses efekti butonları kaldırıldı */
+
 /* Responsive Tasarım */
 @media (max-width: 768px) {
     .tale-content {

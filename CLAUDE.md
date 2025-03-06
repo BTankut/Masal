@@ -3,11 +3,11 @@
 ## Uygulama Özellikleri
 
 ### Ana Özellikler
-- AI destekli çocuk masalı üretimi (OpenAI ve Gemini)
+- AI destekli çocuk masalı üretimi (OpenAI GPT-4o-mini/GPT-4-turbo ve Gemini)
 - Parametrik hikaye oluşturma (karakter, ortam, tema)
-- DALL-E ve Gemini ile otomatik görsel oluşturma
+- DALL-E 3 ile otomatik görsel oluşturma
 - Sayfa düzeninde metin ve görsel görüntüleme
-- Hikaye sesli okuma ve ses efektleri
+- Hikaye sesli okuma ve gelişmiş ses kontrolleri
 - Hikayeyi Word belgesi olarak kaydetme
 
 ### Sayfalama Sistemi
@@ -50,6 +50,9 @@
 - **API Limitleri**: 
   - OpenAI `max_tokens`: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
   - DALL-E: Dakikada 5 istek limiti (generate_image_with_dalle'de 12sn bekleme)
+  - **GPT Modelleri**:
+    - İlk deneme: `gpt-4o-mini-2024-07-18` (versiyon 18.07.2024)
+    - Yeniden deneme: `gpt-4-turbo-2024-04-09` (versiyon 09.04.2024)
 - **Gemini Modelleri**:
   - Öncelikli modeller: `models/gemini-2.0-flash-001`, `models/gemini-2.0-flash-lite-001`
   - Yedek model: `models/gemini-1.5-pro`

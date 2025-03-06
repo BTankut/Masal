@@ -25,10 +25,16 @@ sound_effects = {
 def download_sound(url, filename):
     """Belirtilen URL'den ses dosyasını indir ve kaydet"""
     try:
+        # Önce dosyanın zaten var olup olmadığını kontrol et
+        filepath = os.path.join(SOUNDS_DIR, filename)
+        if os.path.exists(filepath):
+            print(f"Dosya zaten mevcut: {filename}, tekrar indirilmeyecek")
+            return True
+            
+        # Dosya yoksa indir
         response = requests.get(url)
         response.raise_for_status()  # HTTP hatalarını kontrol et
         
-        filepath = os.path.join(SOUNDS_DIR, filename)
         with open(filepath, 'wb') as f:
             f.write(response.content)
         

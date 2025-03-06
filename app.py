@@ -520,12 +520,12 @@ def generate_tale_text_with_openai(character_name, character_type, setting, them
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini-2024-07-18",  # Daha yeni ve gelişmiş bir model kullan
             messages=[
                 {"role": "system", "content": "Sen çocuklar için masal yazan bir yazarsın. Eğitici, eğlenceli ve çocuk dostu masallar yazarsın."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=word_limit * 8,  # Kelime sayısı x 8 token (daha fazla token verelim)
+            max_tokens=min(4000, word_limit * 10),  # Kelime başına daha fazla token verelim ama limit koyalım
             temperature=0.7,
             presence_penalty=0.1,  # Tekrarları önlemek için hafif bir presence penalty ekleyelim
             frequency_penalty=0.1  # Tekrarları önlemek için hafif bir frequency penalty ekleyelim
@@ -564,9 +564,9 @@ def generate_tale_text_with_openai(character_name, character_type, setting, them
             """
             
             try:
-                # Yeniden deneme
+                # Yeniden deneme - Daha iyi bir model kullan
                 retry_response = openai_client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model="gpt-4-turbo-2024-04-09",  # İlk deneme başarısız olursa daha güçlü modele geç
                     messages=[
                         {"role": "system", "content": "Sen kelime sayısı limitlerini tam olarak izleyen bir yazarsın. Verilen kelime sayısı limitlerini daima tam olarak uygularsın."},
                         {"role": "user", "content": retry_prompt}
@@ -900,28 +900,7 @@ def create_placeholder_image(text):
         except:
             return None
 
-def identify_sound_effect_keywords(text):
-    """Metinde ses efekti eklenebilecek anahtar kelimeleri belirler"""
-    # Mevcut ses efektleri
-    available_sounds = {
-        'aslan': {'file': 'lion_roar.mp3', 'description': 'Aslan kükremesi'},
-        'kedi': {'file': 'cat_meow.mp3', 'description': 'Kedi miyavlaması'},
-        'köpek': {'file': 'dog_bark.mp3', 'description': 'Köpek havlaması'},
-        'kuş': {'file': 'bird_chirp.mp3', 'description': 'Kuş cıvıltısı'},
-        'su': {'file': 'water_splash.mp3', 'description': 'Su sesi'},
-        'kapı': {'file': 'door_knock.mp3', 'description': 'Kapı çalma sesi'},
-        'gülme': {'file': 'laugh.mp3', 'description': 'Gülme sesi'},
-        'ağlama': {'file': 'cry.mp3', 'description': 'Ağlama sesi'},
-        'gök gürültüsü': {'file': 'thunder.mp3', 'description': 'Gök gürültüsü'}
-    }
-    
-    # Metinde geçen ses efektlerini bul
-    found_effects = {}
-    for keyword, sound_data in available_sounds.items():
-        if keyword in text.lower():
-            found_effects[keyword] = sound_data
-    
-    return found_effects
+# Ses efekti fonksiyonu kaldırıldı
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8500, debug=True)

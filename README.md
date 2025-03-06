@@ -7,9 +7,9 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 ## Özellikler
 
 ### Ana İşlevler
-- **Yapay Zeka ile Masal Üretimi**: OpenAI veya Google Gemini tarafından desteklenen çocuk dostu metinler
-- **Özgün Görseller**: DALL-E veya Gemini tarafından üretilen, masala özel illüstrasyonlar
-- **Sesli Anlatım**: Metinden sese dönüştürme ile masalın sesli anlatımı
+- **Yapay Zeka ile Masal Üretimi**: OpenAI (GPT-4o-mini, GPT-4-turbo) veya Google Gemini tarafından desteklenen çocuk dostu metinler 
+- **Özgün Görseller**: DALL-E 3 tarafından üretilen, masala özel illüstrasyonlar
+- **Sesli Anlatım**: Google Text-to-Speech ile Türkçe sesli anlatım
 - **Ses Kontrolü**: Durdurma, devam ettirme, hız kontrolü ve ilerleme çubuğu
 - **Kolay Kayıt**: Masalları Word dosyası olarak kaydetme imkanı
 
@@ -54,12 +54,6 @@ pip install -r requirements.txt
 GOOGLE_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 ```
-
-4. Ses efektlerini indirin (isteğe bağlı):
-```bash
-python download_sounds.py
-```
-
 ## Kullanım
 
 1. Uygulamayı başlatın:
@@ -91,8 +85,7 @@ python app.py
 ### Proje Yapısı
 ```
 masal/
-├── app.py                  # Ana Flask uygulaması
-├── download_sounds.py      # Ses efektlerini indirme betiği  
+├── app.py                  # Ana Flask uygulaması 
 ├── requirements.txt        # Python bağımlılıkları
 ├── CLAUDE.md               # Geliştirici kılavuzu ve notlar
 ├── test_gemini.py          # Gemini API test dosyası
@@ -107,23 +100,22 @@ masal/
 │   │   └── style.css       # Uygulama stil dosyası
 │   ├── js/
 │   │   └── main.js         # Frontend fonksiyonları
-│   ├── sounds/             # Ses efekti dosyaları
 │   └── img/                # Statik görseller ve üretilen resimler
 └── templates/
     └── index.html          # Ana uygulama şablonu
 ```
 
-### Sayfalama ve Ses Sistemi
+### Sayfalama ve Sesli Anlatım Sistemi
 
-Uygulama, masalları sayfalar halinde gösterir ve her sayfa için özel ses ve görsel içeriği sunar:
+Uygulama, masalları sayfalar halinde gösterir ve her sayfa için özel görsel ve sesli anlatım içeriği sunar:
 
 - **Sayfa Başına İçerik**: Her sayfa yaklaşık 50 kelime içerir
 - **Sayfa Başına Özel Görsel**: Her sayfa için ayrı AI görsel üretilir
-- **Sayfa Başına Özel Ses**: Her sayfa için ayrı ses dosyası oluşturulur ve oynatılır
+- **Sayfa Başına Özel Sesli Anlatım**: Her sayfa için ayrı gTTS ses dosyası oluşturulur
 - **Tamamlanma İlerleme Göstergesi**: Masal metni, görseller ve ses dosyaları oluşturulurken ayrıntılı durum göstergeleri
 - **Tam İçerik Hazırlığı**: Tüm içerikler (metin, görseller ve sesler) hazır olduğunda masal görüntülenir
 - **Sayfa Gezinme**: İleri/geri butonlarıyla sayfalar arası geçiş yapılabilir
-- **Sesli Anlatım**: Sayfa değiştirildiğinde, önceki ses otomatik olarak durdurulur ve yeni sayfanın sesi çalınır
+- **Gelişmiş Ses Kontrolleri**: Oynat/duraklat, durdur, yeniden başlat ve ilerleme çubuğu
 - **Ses Önbelleği**: Tüm ses dosyaları önceden oluşturulup saklanır, sayfa geçişlerinde anında çalınabilir
 
 ### Test
@@ -148,8 +140,9 @@ Tarayıcıda hata ayıklama konsolunu açmak için:
 ## Performans Hususları
 
 - **API Kullanımı**: API sınırlamalarına ve maliyetlerine dikkat edin
-  - DALL-E: Dakikada 5 görsel istek limiti (uygulama otomatik olarak hız sınırlaması yapar)
-  - OpenAI token limiti: 4096 tokens
+  - DALL-E 3: Dakikada 5 görsel istek limiti (uygulama otomatik olarak hız sınırlaması yapar)
+  - OpenAI modelleri: GPT-4o-mini-2024-07-18 (ilk deneme), GPT-4-turbo-2024-04-09 (yeniden deneme)
+  - Token limiti: max_tokens = min(4000, word_limit * 10)
 - **Görsel Oluşturma**: Sayfa görsellerinin oluşturulması için 5-15 saniye bekleyin
 - **Ses Oluşturma**: Her sayfa için ilk ziyarette ses dosyası oluşturulur (2-5 saniye)
 - **Kelime Sayısı**: AI modelleri tam kelime sayısını üretmekte zorlanabilir (%25-40 sapma olabilir)

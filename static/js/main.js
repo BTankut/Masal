@@ -177,18 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showTalePage();
     });
     
-    // Ses efektleri için önden yükleme
-    const soundEffects = {
-        'aslan': new Audio('/static/sounds/lion_roar.mp3'),
-        'kedi': new Audio('/static/sounds/cat_meow.mp3'),
-        'köpek': new Audio('/static/sounds/dog_bark.mp3'),
-        'kuş': new Audio('/static/sounds/bird_chirp.mp3'),
-        'su': new Audio('/static/sounds/water_splash.mp3'),
-        'gök gürültüsü': new Audio('/static/sounds/thunder.mp3'),
-        'kapı': new Audio('/static/sounds/door_knock.mp3'),
-        'gülme': new Audio('/static/sounds/laugh.mp3'),
-        'ağlama': new Audio('/static/sounds/cry.mp3')
-    };
+    // Ses efekti özellikleri kaldırıldı
     
     // İlerleme durumlarını takip etmek için değişkenler
     let textGenerationComplete = false;
@@ -670,6 +659,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sayfadaki metni göster (innerHTML yerine textContent kullan)
         const taleTextElement = document.getElementById('tale-text');
         if (taleTextElement) {
+            // Sayfanın metnini direkt göster
             taleTextElement.textContent = talePages[pageIndex];
         } else {
             log('HATA: tale-text elementi bulunamadı');
@@ -695,6 +685,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sayfa göstergelerini güncelle
         updatePageNavigation();
     }
+    
+    // Ses efekti özellikleri kaldırıldı
     
     // Sayfa değiştirme butonlarına tıklama olayları
     document.getElementById('prev-page').addEventListener('click', function() {
