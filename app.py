@@ -15,6 +15,7 @@ import google.generativeai as genai
 from PIL import Image
 import requests
 from openai import OpenAI
+import openai  # RateLimitError gibi hata tiplerini yakalamak için
 import tempfile
 from gtts import gTTS
 from docx import Document
@@ -645,11 +646,13 @@ def generate_image_with_dalle(prompt):
         logger.error(f"OpenAI ile görsel oluşturma hatası: {e}")
         logger.error(traceback.format_exc())
         
-        # Rate limit hatası ise, daha uzun süre bekle ve yeniden dene
+        # Farklı hata türlerine göre işlem yap
         if isinstance(e, openai.RateLimitError):
             try:
-                logger.info("DALL-E rate limit hatası, 25 saniye bekleniyor ve yeniden deneniyor...")
-                time.sleep(25)  # Rate limit için daha uzun süre bekle
+                # Rate limit hatası - daha uzun süre bekle ve yeniden dene
+                wait_time = 30  # Rate limit için 30 saniye bekle 
+                logger.info(f"DALL-E rate limit hatası, {wait_time} saniye bekleniyor ve yeniden deneniyor...")
+                time.sleep(wait_time)
                 
                 # Yeniden dene
                 generate_image_with_dalle.last_call_time = time.time()  # Son çağrı zamanını güncelle
@@ -677,6 +680,45 @@ def generate_image_with_dalle(prompt):
             except Exception as retry_error:
                 logger.error(f"DALL-E yeniden deneme hatası: {retry_error}")
                 logger.error(traceback.format_exc())
+        
+        elif isinstance(e, openai.BadRequestError):
+            # İçerik politikası hatası veya diğer Bad Request hataları
+            logger.warning(f"DALL-E içerik politikası hatası veya geçersiz istek: {str(e)}")
+            logger.info("İçerik politikası nedeniyle placeholder görüntü oluşturuluyor...")
+            
+            # İçerik verisi çok özel olabilir, daha genel bir prompt deneyelim
+            try:
+                # Daha genel ve güvenli bir prompt oluştur
+                safe_prompt = "Çocuk dostu, renkli, çizgi film tarzında: Güzel bir orman manzarası, ağaçlar ve çiçekler"
+                
+                # Saniye kadar bekle - rate limit için
+                time.sleep(15)
+                
+                # Yeniden dene
+                generate_image_with_dalle.last_call_time = time.time()
+                
+                response = openai_client.images.generate(
+                    model="dall-e-3",
+                    prompt=safe_prompt,
+                    size="1024x1024",
+                    quality="standard",
+                    n=1,
+                    style="vivid"
+                )
+                image_url = response.data[0].url
+                logger.info(f"DALL-E güvenli prompt ile görsel URL'si oluşturuldu: {image_url[:50]}...")
+                
+                # Resmi indir
+                image_response = requests.get(image_url)
+                image_data = image_response.content
+                
+                # Base64 formatına dönüştür
+                base64_image = base64.b64encode(image_data).decode('utf-8')
+                logger.info("DALL-E görsel güvenli prompt ile oluşturuldu.")
+                return base64_image
+                
+            except Exception as safe_retry_error:
+                logger.error(f"Güvenli prompt ile yeniden deneme hatası: {safe_retry_error}")
         
         # Hata durumunda placeholder görüntü oluştur
         logger.info("DALL-E hatası nedeniyle placeholder görüntü oluşturuluyor...")
@@ -734,23 +776,99 @@ def generate_image_with_gemini(section_text):
         return create_placeholder_image(section_text)
 
 def create_placeholder_image(text):
-    """Metinden basit bir placeholder görüntü oluşturur"""
+    """Metinden daha çekici bir placeholder görüntü oluşturur"""
     try:
-        # Basit bir renkli arka plan oluştur
-        width, height = 512, 512
-        image = Image.new('RGB', (width, height), color=(240, 248, 255))
+        # Boyutları ve arkaplan rengini belirle - açık mavi
+        width, height = 1024, 1024
+        image = Image.new('RGB', (width, height), color=(173, 216, 230))
+        
+        # Görsel iyileştirmeleri ekle - basit bir gökkuşağı arka plan
+        from PIL import ImageDraw, ImageFont
+        
+        draw = ImageDraw.Draw(image)
+        
+        # Renkli çerçeve çiz
+        border_width = 20
+        draw.rectangle(
+            [(border_width, border_width), (width - border_width, height - border_width)],
+            outline=(255, 255, 255),
+            width=5
+        )
+        
+        # Gökkuşağı renkli süsleme çiz
+        colors = [
+            (255, 105, 180),  # Pembe
+            (255, 165, 0),    # Turuncu
+            (255, 215, 0),    # Altın sarısı
+            (144, 238, 144),  # Açık yeşil
+            (135, 206, 250)   # Açık mavi
+        ]
+        
+        # Renkli daireler çiz
+        for i, color in enumerate(colors):
+            pos_x = width // 4 + (i * 50) % (width // 2)
+            pos_y = height // 4 + (i * 50) % (height // 2)
+            circle_size = 30 + (i * 5)
+            draw.ellipse(
+                [(pos_x, pos_y), (pos_x + circle_size, pos_y + circle_size)],
+                fill=color,
+                outline=(255, 255, 255)
+            )
+        
+        # Metin ekle
+        try:
+            # Arial font kullan, yoksa varsayılan font
+            font = ImageFont.truetype("Arial", 24)
+        except IOError:
+            font = ImageFont.load_default()
+            
+        text_to_display = "Resim yüklenemedi. Yeni bir görsel oluşturuluyor..."
+        
+        # Metin için arka plan dikdörtgeni çiz
+        text_bbox = draw.textbbox((0, 0), text_to_display, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        text_pos_x = (width - text_width) // 2
+        text_pos_y = height // 2 - text_height // 2
+        
+        # Metin arkaplanı
+        padding = 10
+        draw.rectangle(
+            [
+                (text_pos_x - padding, text_pos_y - padding),
+                (text_pos_x + text_width + padding, text_pos_y + text_height + padding)
+            ],
+            fill=(255, 255, 255, 128)
+        )
+        
+        # Metni ortaya yerleştir
+        draw.text(
+            (text_pos_x, text_pos_y),
+            text_to_display,
+            font=font,
+            fill=(0, 0, 0)
+        )
         
         # Görüntüyü base64 formatına dönüştür
         buffer = io.BytesIO()
         image.save(buffer, format="PNG")
         base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
         
-        logger.info("Placeholder görüntü başarıyla oluşturuldu.")
+        logger.info("Geliştirilmiş placeholder görüntü başarıyla oluşturuldu.")
         return base64_image
     except Exception as e:
         logger.error(f"Placeholder görüntü oluşturma hatası: {e}")
         logger.error(traceback.format_exc())
-        return None
+        
+        # Hata durumunda çok basit bir görüntü oluştur
+        try:
+            simple_image = Image.new('RGB', (512, 512), color=(240, 248, 255))
+            buffer = io.BytesIO()
+            simple_image.save(buffer, format="PNG")
+            base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            return base64_image
+        except:
+            return None
 
 def identify_sound_effect_keywords(text):
     """Metinde ses efekti eklenebilecek anahtar kelimeleri belirler"""
