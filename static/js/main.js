@@ -1122,6 +1122,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 
                                 html += `
                                 <div class="history-item" data-id="${favori.id}" data-index="${index}">
+                                    <div class="history-thumbnail">
+                                        <img src="/${favori.image || 'static/img/default-tale.jpg'}" alt="${favori.title || 'Favori Masal ' + (index + 1)}" class="history-image">
+                                    </div>
                                     <div class="history-item-info">
                                         <h4>${favori.title || 'Favori Masal ' + (index + 1)}</h4>
                                         <p>${favori.characterName || ''} ${favori.characterType || ''}</p>
