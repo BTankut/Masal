@@ -48,7 +48,10 @@
 - **Hatalar**: Spesifik except bloklarını kullan
 - **Güvenlik**: API anahtarları sadece .env dosyasında
 - **Frontend**: Modüler JS, responsive design, `window.log()`
-- **Yerel Depolama**: LocalStorage API ile masal geçmişi ve favori masallar 
+- **Veri Saklama**:
+  - LocalStorage API ile masal geçmişi ve favori masallar (tarayıcı tarafı)
+  - `/static/tales/` klasöründe sunucu tarafında kayıtlı masallar (offline kullanım için)
+  - Hibrit önbellek stratejisi: Hem client-side hem server-side veri saklama
 - **AI İçerik**: Daima çocuk dostu ve yaşa uygun
 - **API Limitleri**: 
   - OpenAI `max_tokens`: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
@@ -121,7 +124,15 @@
   - Tam Hazırlık: İçeriklerin tamamen hazır olmasını bekleyerek kesintisiz kullanıcı deneyimi
   - Ses Önbelleği: Tüm sayfaların ses dosyaları başlangıçta üretilip tarayıcıda saklanır
   - Medya Senkronizasyonu: Sayfa değişikliklerinde görsel ve ses dosyaları otomatik olarak güncellenir
-  - LocalStorage Kullanımı: 
-    - Tema tercihleri: "theme" anahtarı ile saklanır
-    - Masal geçmişi: "taleHistory" anahtarı ile son 5 masal saklanır
-    - Favori masallar: "favs" anahtarı ile en fazla 5 favori masal saklanır
+  - Veri Saklama ve Önbellekleme:
+    - **LocalStorage Anahtarları**:
+      - Tema tercihleri: `theme` anahtarı ile saklanır
+      - Masal geçmişi: `taleHistory` anahtarı ile son 5 masal saklanır
+      - Favori masallar: `taleFavorites` anahtarı ile en fazla 5 favori masal saklanır
+    - **Fiziksel Dosya Depolama**:
+      - Sunucu: `/static/tales/history/` ve `/static/tales/favorites/` klasörlerinde JSON, görsel ve ses dosyaları
+      - Dosya organizasyonu: Her masal için ID bazlı JSON, görsel ve sayfa dosyaları
+    - **Offline Erişim**:
+      - Masallar hem tarayıcıda hem sunucuda saklanır
+      - Offline kullanım için önbellekleme mekanizması
+      - Hibrit yükleme: Önce lokalden hızlı yükleme, sonra sunucudan veri senkronizasyonu

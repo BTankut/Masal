@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masal Debug Sayfası</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 20px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .btn-danger {
+            background-color: #f44336;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        .actions {
+            margin: 20px 0;
+        }
+        .log-container {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Masal Debug Sayfası</h1>
+        
+        <div class="actions">
+            <button class="btn" id="load-local-storage">localStorage Verileri</button>
+            <button class="btn" id="load-server-storage">Sunucu Verileri</button>
+            <button class="btn btn-danger" id="clear-local-storage">localStorage Temizle</button>
+            <button class="btn btn-danger" id="clear-server-storage">Sunucu Verileri Temizle</button>
+        </div>
+        
+        <h2>Favori Masallar (localStorage)</h2>
+        <div id="favorite-tales-container" class="log-container">
+            <pre id="favorite-tales">Veriler yükleniyor...</pre>
+        </div>
+        
+        <h2>Masal Geçmişi (localStorage)</h2>
+        <div id="history-tales-container" class="log-container">
+            <pre id="history-tales">Veriler yükleniyor...</pre>
+        </div>
+        
+        <h2>Sunucu Verileri</h2>
+        <div id="server-tales-container" class="log-container">
+            <pre id="server-tales">Veriler yükleniyor...</pre>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // İlk yükleme
+            loadLocalStorageData();
+            
+            // Buton olayları
+            document.getElementById('load-local-storage').addEventListener('click', loadLocalStorageData);
+            document.getElementById('load-server-storage').addEventListener('click', loadServerStorageData);
+            document.getElementById('clear-local-storage').addEventListener('click', clearLocalStorage);
+            document.getElementById('clear-server-storage').addEventListener('click', clearServerStorage);
+        });
+        
+        function loadLocalStorageData() {
+            // Favori masalları yükle
+            const favoriteData = localStorage.getItem('taleFavorites');
+            document.getElementById('favorite-tales').textContent = favoriteData ? 
+                JSON.stringify(JSON.parse(favoriteData), null, 2) : 
+                'Favori masal bulunamadı';
+            
+            // Geçmiş masalları yükle
+            const historyData = localStorage.getItem('taleHistory');
+            document.getElementById('history-tales').textContent = historyData ? 
+                JSON.stringify(JSON.parse(historyData), null, 2) : 
+                'Geçmiş masal bulunamadı';
+        }
+        
+        function loadServerStorageData() {
+            // Favorileri yükle
+            fetch('/list_tales?type=favorites')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('server-tales').textContent = 
+                        JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('server-tales').textContent = 
+                        `Sunucudan veri yüklenirken hata oluştu: ${error.message}`;
+                });
+        }
+        
+        function clearLocalStorage() {
+            if (confirm('Tüm lokalden saklanan masallar silinecek. Emin misiniz?')) {
+                localStorage.removeItem('taleFavorites');
+                localStorage.removeItem('taleHistory');
+                localStorage.removeItem('favorites');
+                localStorage.removeItem('favs');
+                loadLocalStorageData();
+                alert('Lokaldeki tüm masal verileri silindi');
+            }
+        }
+        
+        function clearServerStorage() {
+            if (confirm('Tüm sunucuda saklanan masallar silinecek. Emin misiniz?')) {
+                fetch('/clear_tales', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: 'all' })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Sunucudaki tüm masallar temizlendi!');
+                        loadServerStorageData();
+                    } else {
+                        alert('Hata: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Sunucu iletişim hatası: ' + error.message);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

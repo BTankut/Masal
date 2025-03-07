@@ -7,8 +7,10 @@ import json
 import logging
 import time
 import datetime
+import glob
+import argparse
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, jsonify, send_file, make_response
+from flask import Flask, render_template, request, jsonify, send_file, make_response, after_this_request
 from flask_cors import CORS
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -18,6 +20,8 @@ from openai import OpenAI
 import openai  # RateLimitError gibi hata tiplerini yakalamak için
 import tempfile
 from gtts import gTTS
+from docx import Document
+from docx.shared import Inches
 from docx import Document
 from docx.shared import Inches
 
@@ -103,6 +107,15 @@ def index():
     logger.debug("Ana sayfa isteği alındı.")
     response = make_response(render_template('index.html'))
     # Önbelleği devre dışı bırak
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+    
+@app.route('/debug')
+def debug_page():
+    logger.debug("Debug sayfası isteği alındı.")
+    response = make_response(render_template('debug.html'))
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
@@ -247,6 +260,339 @@ def generate_audio():
         return send_file(audio_path, mimetype='audio/mpeg', as_attachment=False)
     except Exception as e:
         logger.error(f"Sayfa {page+1} için ses oluşturma hatası: {str(e)}")
+        
+@app.route('/save_tale', methods=['POST'])
+def save_tale():
+    try:
+        data = request.json
+        if not data:
+            logger.error("save_tale: Gelen veri boş")
+            return jsonify({'error': 'Veri bulunamadı'}), 400
+        
+        # Masal ID'sini kontrol et, yoksa oluştur
+        tale_id = data.get('id', str(int(time.time())))
+        tale_type = data.get('type', 'history')  # 'history' veya 'favorites'
+        tale_title = data.get('title', 'Başlıksız Masal')
+        
+        logger.info(f"save_tale: Masal kaydediliyor - ID: {tale_id}, Tür: {tale_type}, Başlık: {tale_title}")
+        
+        # Dizini belirle
+        if tale_type == 'favorites':
+            directory = 'static/tales/favorites'
+        else:
+            directory = 'static/tales/history'
+        
+        # Klasör yoksa oluştur
+        os.makedirs(directory, exist_ok=True)
+        
+        # Masal bilgilerini JSON olarak kaydet
+        tale_info = {
+            'id': tale_id,
+            'title': tale_title,
+            'text': data.get('text', ''),
+            'date': data.get('date', datetime.datetime.now().isoformat()),
+            'characterName': data.get('characterName', ''),
+            'characterType': data.get('characterType', ''),
+            'setting': data.get('setting', ''),
+            'theme': data.get('theme', '')
+        }
+        
+        # JSON dosyasını kaydet
+        json_path = f"{directory}/{tale_id}.json"
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(tale_info, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"save_tale: JSON bilgileri kaydedildi: {json_path}")
+        
+        # Görsel varsa kaydet
+        image_saved = False
+        if 'image' in data and data['image']:
+            # Base64 veriyi ayır ve decode et
+            try:
+                image_path = f"{directory}/{tale_id}_image.jpg"
+                if data['image'].startswith('data:image/'):
+                    logger.debug(f"save_tale: Base64 görsel verisi işleniyor")
+                    img_data = data['image'].split(',')[1]
+                    binary_data = base64.b64decode(img_data)
+                else:
+                    # URL ise indirip kaydedelim
+                    logger.debug(f"save_tale: URL'den görsel indiriliyor: {data['image'][:30]}...")
+                    response = requests.get(data['image'])
+                    binary_data = response.content
+                
+                # Görsel dosyasını kaydet
+                with open(image_path, 'wb') as f:
+                    f.write(binary_data)
+                
+                logger.info(f"save_tale: Ana görsel kaydedildi: {image_path}")
+                image_saved = True
+            except Exception as img_err:
+                logger.error(f"save_tale: Ana görsel kaydedilirken hata: {img_err}")
+        
+        if not image_saved:
+            logger.warning(f"save_tale: Masal görseli bulunamadı veya kaydedilemedi")
+        
+        # Eğer sayfalanmış metin varsa her sayfa için ayrı resim kaydedelim
+        pages_count = 0
+        pages_with_images = 0
+        
+        if 'pages' in data and isinstance(data['pages'], list):
+            pages_count = len(data['pages'])
+            logger.info(f"save_tale: {pages_count} sayfa verisi kaydedilecek")
+            
+            for i, page in enumerate(data['pages']):
+                page_content = page.get('text', '')
+                page_image = page.get('image', '')
+                
+                # Sayfa metnini kaydet
+                page_text_path = f"{directory}/{tale_id}_page_{i}.txt"
+                with open(page_text_path, 'w', encoding='utf-8') as f:
+                    f.write(page_content)
+                
+                # Sayfa görselini kaydet
+                if page_image:
+                    try:
+                        page_image_path = f"{directory}/{tale_id}_page_{i}_image.jpg"
+                        
+                        if page_image.startswith('data:image/'):
+                            img_data = page_image.split(',')[1]
+                            binary_data = base64.b64decode(img_data)
+                        else:
+                            # URL ise indirip kaydedelim
+                            response = requests.get(page_image)
+                            binary_data = response.content
+                        
+                        with open(page_image_path, 'wb') as f:
+                            f.write(binary_data)
+                        
+                        pages_with_images += 1
+                    except Exception as page_img_err:
+                        logger.error(f"save_tale: Sayfa {i+1} görseli kaydedilirken hata: {page_img_err}")
+        
+        logger.info(f"save_tale: Toplam {pages_count} sayfa kaydedildi, {pages_with_images} sayfa görsel içeriyor")
+        
+        # Eğer ses dosyaları varsa kaydedelim
+        audio_count = 0
+        if 'audios' in data and isinstance(data['audios'], dict):
+            for page_idx, audio_data in data['audios'].items():
+                if 'blob' in audio_data:
+                    try:
+                        # Base64 veri
+                        audio_path = f"{directory}/{tale_id}_page_{page_idx}_audio.mp3"
+                        binary_data = base64.b64decode(audio_data['blob'])
+                        with open(audio_path, 'wb') as f:
+                            f.write(binary_data)
+                        audio_count += 1
+                    except Exception as audio_err:
+                        logger.error(f"save_tale: Sayfa {page_idx} ses dosyası kaydedilirken hata: {audio_err}")
+        
+        logger.info(f"save_tale: Toplam {audio_count} sayfa için ses dosyası kaydedildi")
+        logger.info(f"save_tale: Masal başarıyla kaydedildi - ID: {tale_id}, Tür: {tale_type}, Başlık: {tale_title}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Masal başarıyla kaydedildi',
+            'tale_id': tale_id
+        })
+    
+    except Exception as e:
+        logger.error(f"Masal kaydetme hatası: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/list_tales', methods=['GET'])
+def list_tales():
+    try:
+        tale_type = request.args.get('type', 'history')  # 'history' veya 'favorites'
+        
+        logger.info(f"list_tales: {tale_type} tipindeki masallar listeleniyor")
+        
+        # Dizini belirle
+        if tale_type == 'favorites':
+            directory = 'static/tales/favorites'
+        else:
+            directory = 'static/tales/history'
+        
+        # Klasör yoksa oluştur
+        os.makedirs(directory, exist_ok=True)
+        
+        # JSON dosyalarını bul
+        tales = []
+        json_files = glob.glob(f"{directory}/*.json")
+        
+        logger.info(f"list_tales: {len(json_files)} adet JSON dosyası bulundu")
+        
+        for json_file in json_files:
+            try:
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    tale_data = json.load(f)
+                
+                # Dosya adından ID al
+                tale_id = os.path.basename(json_file).replace('.json', '')
+                
+                # Görsel ve ses dosyalarını kontrol et
+                image_path = f"{directory}/{tale_id}_image.jpg"
+                has_image = os.path.exists(image_path)
+                
+                # Sayfa dosyalarını say
+                page_files = glob.glob(f"{directory}/{tale_id}_page_*.txt")
+                audio_files = glob.glob(f"{directory}/{tale_id}_page_*_audio.mp3")
+                page_image_files = glob.glob(f"{directory}/{tale_id}_page_*_image.jpg")
+                
+                # Masal bilgilerini listeye ekle
+                tale_info = {
+                    'id': tale_id,
+                    'title': tale_data.get('title', 'Başlıksız Masal'),
+                    'date': tale_data.get('date', ''),
+                    'characterName': tale_data.get('characterName', ''),
+                    'characterType': tale_data.get('characterType', ''),
+                    'has_image': has_image,
+                    'image_url': f'/{image_path}' if has_image else None,
+                    'page_count': len(page_files),
+                    'has_audio': len(audio_files) > 0,
+                    'has_page_images': len(page_image_files) > 0,
+                    'type': tale_type
+                }
+                
+                logger.debug(f"list_tales: Masal bilgileri: {tale_info}")
+                tales.append(tale_info)
+                
+            except Exception as e:
+                logger.error(f"list_tales: JSON dosyası okuma hatası ({json_file}): {e}")
+        
+        # Tarihe göre sırala (en yeni en üstte)
+        tales.sort(key=lambda x: x.get('date', ''), reverse=True)
+        
+        # En fazla 5 masal döndür
+        tales = tales[:5]
+        
+        logger.info(f"list_tales: Toplam {len(tales)} adet masal listelendi")
+        
+        return jsonify(tales)
+    
+    except Exception as e:
+        logger.error(f"Masalları listeleme hatası: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/clear_tales', methods=['POST'])
+def clear_tales():
+    try:
+        data = request.json
+        tale_type = data.get('type', 'all')  # 'history', 'favorites' veya 'all'
+        
+        logger.info(f"clear_tales: {tale_type} tipindeki masallar temizleniyor")
+        
+        directories = []
+        if tale_type == 'all' or tale_type == 'history':
+            directories.append('static/tales/history')
+        if tale_type == 'all' or tale_type == 'favorites':
+            directories.append('static/tales/favorites')
+        
+        for directory in directories:
+            if os.path.exists(directory):
+                try:
+                    # Tüm dosyaları temizle
+                    for file in os.listdir(directory):
+                        file_path = os.path.join(directory, file)
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                    
+                    logger.info(f"clear_tales: {directory} içindeki tüm dosyalar temizlendi")
+                except Exception as e:
+                    logger.error(f"clear_tales: {directory} temizlenirken hata: {e}")
+        
+        return jsonify({'success': True, 'message': 'Masallar başarıyla temizlendi'})
+    
+    except Exception as e:
+        logger.error(f"Masalları temizleme hatası: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/load_tale/<tale_id>')
+def load_tale(tale_id):
+    try:
+        tale_type = request.args.get('type', 'history')  # 'history' veya 'favorites'
+        
+        logger.info(f"load_tale: {tale_type} tipindeki masal {tale_id} yükleniyor")
+        
+        # Dizini belirle
+        if tale_type == 'favorites':
+            directory = 'static/tales/favorites'
+        else:
+            directory = 'static/tales/history'
+        
+        # JSON dosyasını oku
+        json_file = f"{directory}/{tale_id}.json"
+        
+        if not os.path.exists(json_file):
+            logger.error(f"load_tale: Masal bulunamadı - dosya yok: {json_file}")
+            return jsonify({'error': 'Masal bulunamadı'}), 404
+        
+        with open(json_file, 'r', encoding='utf-8') as f:
+            tale_data = json.load(f)
+        
+        logger.info(f"load_tale: Masal JSON verisi yüklendi: {tale_data.get('title', 'Başlıksız')}")
+        
+        # Masal türünü ekle
+        tale_data['type'] = tale_type
+        
+        # Masala ait görselleri bul
+        tale_data['pages'] = []
+        
+        # Ana görsel
+        image_path = f"{directory}/{tale_id}_image.jpg"
+        if os.path.exists(image_path):
+            tale_data['image_url'] = f'/{image_path}'
+            logger.info(f"load_tale: Ana görsel bulundu: {image_path}")
+        else:
+            logger.warning(f"load_tale: Ana görsel bulunamadı: {image_path}")
+        
+        # Sayfa dosyalarını bul
+        page_files = sorted(glob.glob(f"{directory}/{tale_id}_page_*.txt"))
+        logger.info(f"load_tale: {len(page_files)} adet sayfa metni dosyası bulundu")
+        
+        for i, page_file in enumerate(page_files):
+            try:
+                page_idx = os.path.basename(page_file).replace(f'{tale_id}_page_', '').replace('.txt', '')
+                
+                # Sayfa metni
+                with open(page_file, 'r', encoding='utf-8') as f:
+                    page_text = f.read()
+                
+                # Sayfa görseli
+                page_image = f"{directory}/{tale_id}_page_{page_idx}_image.jpg"
+                page_image_url = None
+                if os.path.exists(page_image):
+                    page_image_url = f'/{page_image}'
+                    logger.debug(f"load_tale: Sayfa {page_idx} için görsel bulundu")
+                
+                # Sayfa ses dosyası
+                page_audio = f"{directory}/{tale_id}_page_{page_idx}_audio.mp3"
+                page_audio_url = None
+                if os.path.exists(page_audio):
+                    page_audio_url = f'/{page_audio}'
+                    logger.debug(f"load_tale: Sayfa {page_idx} için ses dosyası bulundu")
+                
+                # Sayfa bilgilerini ekle
+                tale_data['pages'].append({
+                    'index': int(page_idx),
+                    'text': page_text,
+                    'image_url': page_image_url,
+                    'audio_url': page_audio_url
+                })
+            except Exception as page_err:
+                logger.error(f"load_tale: Sayfa {i} yüklenirken hata: {page_err}")
+        
+        # Sayfaları sırala
+        tale_data['pages'].sort(key=lambda x: x['index'])
+        
+        logger.info(f"load_tale: Masal başarıyla yüklendi - {tale_data.get('title', 'Başlıksız')} ({len(tale_data['pages'])} sayfa)")
+        
+        return jsonify(tale_data)
+    
+    except Exception as e:
+        logger.error(f"Masal yükleme hatası: {e}")
         logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 

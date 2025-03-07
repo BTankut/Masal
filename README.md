@@ -37,7 +37,9 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 ### Frontend
 - **Teknolojiler**: HTML5, CSS3, JavaScript
 - **UI Bileşenleri**: Font Awesome, Google Fonts
-- **Veri Saklama**: Browser localStorage (tema tercihleri, masal geçmişi ve favoriler)
+- **Veri Saklama**: 
+  - Tarayıcı localStorage (tema tercihleri, masal geçmişi ve favoriler)
+  - Sunucu depolama (masalların offline kullanım için sunucuda da saklanması)
 
 ## Kurulum
 
@@ -104,9 +106,13 @@ masal/
 │   │   └── style.css       # Uygulama stil dosyası
 │   ├── js/
 │   │   └── main.js         # Frontend fonksiyonları
-│   └── img/                # Statik görseller ve üretilen resimler
+│   ├── img/                # Statik görseller
+│   └── tales/              # Sunucuda saklanan masal verileri
+│       ├── favorites/      # Favori masallar için JSON, görsel, ses dosyaları
+│       └── history/        # Geçmiş masallar için JSON, görsel, ses dosyaları
 └── templates/
-    └── index.html          # Ana uygulama şablonu
+    ├── index.html          # Ana uygulama şablonu
+    └── debug.html          # Debug ve veri yönetimi sayfası
 ```
 
 ### Sayfalama ve Sesli Anlatım Sistemi
@@ -135,11 +141,19 @@ Prompt formüllerini test etmek için:
 python test_prompt_length.py --counts 200 500 --api both  # Her iki API için belirli kelime sayılarını test et
 ```
 
-### Debug Modu
+### Debug Özellikleri
 
-Tarayıcıda hata ayıklama konsolunu açmak için:
-- `Alt+D` tuş kombinasyonunu kullanın
+**Tarayıcı Debug Konsolu**:
+- `Alt+D` tuş kombinasyonuyla hata ayıklama konsolunu açın
 - Konsolda yapılan işlemleri ve hataları görebilirsiniz
+
+**Diğer Debug Araçları**:
+- `Alt+C` tuş kombinasyonuyla tüm masalları temizleyebilirsiniz (localStorage ve sunucu)
+- Debug sayfası (`/debug` URL'i) - Tüm masal verilerini görüntüleme ve yönetme arayüzü:
+  - localStorage verilerini görüntüleme
+  - Sunucu verilerini görüntüleme
+  - Tüm verileri temizleme (localStorage ve sunucu)
+  - Veri senkronizasyonu sorunlarını tespit etme
 
 ## Performans Hususları
 
@@ -150,10 +164,18 @@ Tarayıcıda hata ayıklama konsolunu açmak için:
 - **Görsel Oluşturma**: Sayfa görsellerinin oluşturulması için 5-15 saniye bekleyin
 - **Ses Oluşturma**: Her sayfa için ilk ziyarette ses dosyası oluşturulur (2-5 saniye)
 - **Kelime Sayısı**: AI modelleri tam kelime sayısını üretmekte zorlanabilir (%25-40 sapma olabilir)
-- **Tarayıcı Depolama**: 
-  - Masal geçmişi: Son 5 oluşturulan masal otomatik kaydedilir
-  - Favoriler: En fazla 5 masal favorilere eklenebilir
-- **Ses Önbelleği**: Sayfa başına oluşturulan sesler tarayıcı oturumu boyunca saklanır
+- **Depolama ve Önbellekleme**: 
+  - **Tarayıcı Depolama**:
+    - Masal geçmişi: Son 5 oluşturulan masal otomatik kaydedilir (`taleHistory`)
+    - Favoriler: En fazla 5 masal favorilere eklenebilir (`taleFavorites`)
+  - **Sunucu Depolama**:
+    - `/static/tales/history/` ve `/static/tales/favorites/` klasörlerinde
+    - Her masal için JSON, görsel ve ses dosyaları saklanır
+    - Offline kullanım için veriler tarayıcıda ve sunucuda kaydedilir
+  - **Önbellekleme Stratejisi**:
+    - Sayfa başına oluşturulan sesler hem tarayıcıda hem sunucuda saklanır
+    - Sayfa yüklenirken önce tarayıcı verileri, sonra sunucu verileri kullanılır
+    - Hibrit erişim: Hızlı yanıt için lokalde, kalıcılık için sunucuda depolama
 - **Gelişmiş Loglama Sistemi**: Tüm oturum logları `logs/` klasöründe tarih-saat damgalı dosyalarda saklanır
   - Uygulama logları: `app_YYYY-MM-DD_HH-MM-SS.log` (INFO ve üstü seviye mesajlar)
   - Debug logları: `debug_YYYY-MM-DD_HH-MM-SS.log` (DEBUG ve üstü tüm detaylı mesajlar)
