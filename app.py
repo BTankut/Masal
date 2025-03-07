@@ -1221,8 +1221,14 @@ def generate_image_with_dalle(prompt):
             size="1024x1024",
             quality="standard",
             n=1,
-            style="vivid"  # "vivid" veya "natural" olabilir
+            style="natural"  # "vivid" veya "natural" olabilir
         )
+        
+        # Check for revised prompt
+        if hasattr(response.data[0], 'revised_prompt'):
+            logger.info(f"DALL-E revised prompt: {response.data[0].revised_prompt[:100]}...")
+            prompt_logger.info(f"DALL-E revised prompt: {response.data[0].revised_prompt}")
+        
         image_url = response.data[0].url
         logger.info(f"DALL-E görsel URL'si oluşturuldu: {image_url[:50]}...")
         
@@ -1256,8 +1262,14 @@ def generate_image_with_dalle(prompt):
                     size="1024x1024",
                     quality="standard",
                     n=1,
-                    style="vivid"
+                    style="natural"
                 )
+                
+                # Check for revised prompt
+                if hasattr(response.data[0], 'revised_prompt'):
+                    logger.info(f"DALL-E retry revised prompt: {response.data[0].revised_prompt[:100]}...")
+                    prompt_logger.info(f"DALL-E retry revised prompt: {response.data[0].revised_prompt}")
+                
                 image_url = response.data[0].url
                 logger.info(f"DALL-E görsel URL'si yeniden deneme sonrası oluşturuldu: {image_url[:50]}...")
                 
@@ -1298,6 +1310,12 @@ def generate_image_with_dalle(prompt):
                     n=1,
                     style="vivid"
                 )
+                
+                # Check for revised prompt
+                if hasattr(response.data[0], 'revised_prompt'):
+                    logger.info(f"DALL-E safe retry revised prompt: {response.data[0].revised_prompt[:100]}...")
+                    prompt_logger.info(f"DALL-E safe retry revised prompt: {response.data[0].revised_prompt}")
+                
                 image_url = response.data[0].url
                 logger.info(f"DALL-E güvenli prompt ile görsel URL'si oluşturuldu: {image_url[:50]}...")
                 

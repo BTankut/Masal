@@ -5,6 +5,7 @@
 ### Ana Özellikler
 - AI destekli çocuk masalı üretimi (OpenAI GPT-4o-mini/GPT-4-turbo ve Gemini)
 - Parametrik hikaye oluşturma (karakter, ortam, tema)
+- Kapsamlı karakter özellikleri (yaş, cinsiyet, saç rengi/tipi, ten rengi)
 - DALL-E 3 ile otomatik görsel oluşturma
 - Sayfa düzeninde metin ve görsel görüntüleme
 - Hikaye sesli okuma ve gelişmiş ses kontrolleri

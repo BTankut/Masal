@@ -8,6 +8,7 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 
 ### Ana İşlevler
 - **Yapay Zeka ile Masal Üretimi**: OpenAI (GPT-4o-mini, GPT-4-turbo) veya Google Gemini tarafından desteklenen çocuk dostu metinler 
+- **Kişiselleştirilmiş Karakterler**: Karakter yaşı, cinsiyeti, saç rengi/tipi ve ten rengi gibi özellikler belirlenerek daha kişisel masallar
 - **Özgün Görseller**: DALL-E 3 tarafından üretilen, masala özel illüstrasyonlar
 - **Sesli Anlatım**: Google Text-to-Speech ile Türkçe sesli anlatım
 - **Ses Kontrolü**: Durdurma, devam ettirme, hız kontrolü ve ilerleme çubuğu
@@ -72,6 +73,12 @@ python app.py
 3. Masal tercihlerinizi girin:
    - Karakter Adı (örn. Mila, Ayşe, Ali)
    - Karakter Türü (örn. prenses, kahraman, gezgin)
+   - Karakter Özellikleri: 
+     - Yaş (1-12 arası)
+     - Cinsiyet (kız, erkek)
+     - Saç Rengi (sarı, siyah, kızıl, koyu kumral vs.)
+     - Saç Tipi (düz, dalgalı, kıvırcık vs.)
+     - Ten Rengi (beyaz, esmer, bronz vs.)
    - Masal Ortamı (örn. orman, uzay, deniz)
    - Masal Teması (örn. dostluk, macera, keşif)
    - Kelime Sayısı (200 veya 500 kelime)
@@ -199,8 +206,10 @@ python test_prompt_length.py --counts 200 500 --api both  # Her iki API için be
 ## Gelecek Geliştirmeler
 
 - Daha doğru kelime sayısı üretimi için prompt optimizasyonu
+- DALL-E görsellerinde metin oluşumunu daha etkili şekilde engelleme
 - Çoklu dil desteği
 - Kelime sayacı algoritması iyileştirmeleri
+- Daha fazla karakter özelliği ve kostüm seçenekleri
 - Ek illüstrasyon stilleri ve görsel stillendirme
 - Kullanıcı hesapları ve bulut tabanlı masal depolama
 - Masallar içinde daha fazla etkileşimli unsur
