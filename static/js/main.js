@@ -377,6 +377,20 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('image_api', imageApi);
             formData.append('text_api', textApi);
             
+            // Karakter özelliklerini ekle
+            const characterAge = document.getElementById('character-age').value;
+            const characterGender = document.getElementById('character-gender').value;
+            const characterHairColor = document.getElementById('character-hair-color').value;
+            const characterHairType = document.getElementById('character-hair-type').value;
+            const characterSkinColor = document.getElementById('character-skin-color').value;
+            
+            formData.append('character_age', characterAge);
+            formData.append('character_gender', characterGender);
+            formData.append('character_hair_color', characterHairColor);
+            formData.append('character_hair_type', characterHairType);
+            formData.append('character_skin_color', characterSkinColor);
+            
+            // Detaylı log
             log('API isteği gönderiliyor...', {
                 character_name: characterName,
                 character_type: characterType,
@@ -384,7 +398,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 theme: theme,
                 word_limit: wordLimit,
                 image_api: imageApi,
-                text_api: textApi
+                text_api: textApi,
+                character_age: characterAge,
+                character_gender: characterGender, 
+                character_hair_color: characterHairColor,
+                character_hair_type: characterHairType,
+                character_skin_color: characterSkinColor
             });
             
             // Metin oluşturma durumunu güncelle
