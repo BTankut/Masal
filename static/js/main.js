@@ -478,6 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         setting: setting,
                                         image_api: imageApi,
                                         character_age: document.getElementById('character-age')?.value || '',
+                                        character_gender: document.getElementById('character-gender')?.value || '',
                                         character_hair_color: document.getElementById('character-hair-color')?.value || '',
                                         character_hair_type: document.getElementById('character-hair-type')?.value || '',
                                         character_skin_color: document.getElementById('character-skin-color')?.value || ''
@@ -2725,6 +2726,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveCharacterAttributes() {
         const characterName = document.getElementById('character-name').value;
         const characterAge = document.getElementById('character-age').value;
+        const characterGender = document.getElementById('character-gender').value;
         const characterHairColor = document.getElementById('character-hair-color').value;
         const characterHairType = document.getElementById('character-hair-type').value;
         const characterSkinColor = document.getElementById('character-skin-color').value;
@@ -2733,6 +2735,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const attributes = {};
         if (characterName) attributes.name = characterName;
         if (characterAge) attributes.age = characterAge;
+        if (characterGender) attributes.gender = characterGender;
         if (characterHairColor) attributes.hairColor = characterHairColor;
         if (characterHairType) attributes.hairType = characterHairType;
         if (characterSkinColor) attributes.skinColor = characterSkinColor;
@@ -2785,6 +2788,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log(`"${name}" için kayıtlı özellikler bulundu:`, attributes);
                     
                     if (attributes.age) document.getElementById('character-age').value = attributes.age;
+                    if (attributes.gender) document.getElementById('character-gender').value = attributes.gender;
                     if (attributes.hairColor) document.getElementById('character-hair-color').value = attributes.hairColor;
                     if (attributes.hairType) document.getElementById('character-hair-type').value = attributes.hairType;
                     if (attributes.skinColor) document.getElementById('character-skin-color').value = attributes.skinColor;

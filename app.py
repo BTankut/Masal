@@ -149,6 +149,7 @@ def generate_tale():
             # Karakter detaylarını al
             character_attributes = {
                 'character_age': data.get('character_age', ''),
+                'character_gender': data.get('character_gender', ''),
                 'character_hair_color': data.get('character_hair_color', ''),
                 'character_hair_type': data.get('character_hair_type', ''),
                 'character_skin_color': data.get('character_skin_color', '')
@@ -173,6 +174,7 @@ def generate_tale():
             # Karakter detaylarını al
             character_attributes = {
                 'character_age': request.form.get('character_age', ''),
+                'character_gender': request.form.get('character_gender', ''),
                 'character_hair_color': request.form.get('character_hair_color', ''),
                 'character_hair_type': request.form.get('character_hair_type', ''),
                 'character_skin_color': request.form.get('character_skin_color', '')
@@ -695,12 +697,16 @@ def generate_page_image():
         # Karakter özelliklerini al
         character_description = ""
         character_age = data.get('character_age', '')
+        character_gender = data.get('character_gender', '')
         character_hair_type = data.get('character_hair_type', '')
         character_hair_color = data.get('character_hair_color', '')
         character_skin_color = data.get('character_skin_color', '')
         
         if character_age:
             character_description += f"{character_age} yaşında, "
+        
+        if character_gender:
+            character_description += f"{character_gender}, "
         
         hair_parts = []
         if character_hair_type:
@@ -845,12 +851,15 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         if character_attributes:
             description_parts = []
             age = character_attributes.get('character_age')
+            gender = character_attributes.get('character_gender')
             hair_color = character_attributes.get('character_hair_color')
             hair_type = character_attributes.get('character_hair_type')
             skin_color = character_attributes.get('character_skin_color')
             
             if age:
                 description_parts.append(f"{age} yaşında")
+            if gender:
+                description_parts.append(f"{gender}")
             if hair_color and hair_type:
                 description_parts.append(f"{hair_type} {hair_color} saçlı")
             elif hair_color:
@@ -1133,7 +1142,7 @@ def generate_image_with_dalle(prompt):
     """OpenAI DALL-E API kullanarak görsel oluşturur"""
     try:
         # Prompt'u çocuk dostu hale getir ve yazı içermemesini sağla
-        enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında, hiç yazı veya konuşma balonu içermeyen bir resim: {prompt}"
+        enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında, hiçbir yazı, metin veya konuşma balonu içermeyen, yazısız bir resim: {prompt}"
         logger.info(f"DALL-E prompt: {enhanced_prompt[:100]}...")
         
         # Rate limit kontrolü için basit hız sınırlama
