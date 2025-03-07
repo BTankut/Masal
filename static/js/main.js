@@ -2008,7 +2008,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             html += `
                             <div class="history-item" data-id="${favori.id}" data-index="${index}">
                                 <div class="history-thumbnail">
-                                    <img src="${favori.image || 'static/img/default-tale.jpg'}" alt="${favori.title || 'Favori Masal ' + (index + 1)}" class="history-image">
+                                    <img src="/${favori.image || 'static/img/default-tale.jpg'}" alt="${favori.title || 'Favori Masal ' + (index + 1)}" class="history-image">
                                 </div>
                                 <div class="history-item-info">
                                     <h4>${favori.title || 'Favori Masal ' + (index + 1)}</h4>
@@ -2364,6 +2364,9 @@ document.addEventListener('DOMContentLoaded', function() {
         taleFavorites.forEach((tale, index) => {
             favoritesHTML += `
                 <div class="history-item" data-id="${tale.id || ''}" data-index="${index}">
+                    <div class="history-thumbnail">
+                        <img src="/${tale.image || 'static/img/default-tale.jpg'}" alt="${tale.title || 'Favori Masal ' + (index + 1)}" class="history-image">
+                    </div>
                     <div class="history-item-info">
                         <h4>${tale.title || 'Favori Masal ' + (index + 1)}</h4>
                         <p>${tale.characterName || ''} ${tale.characterType || ''}</p>
