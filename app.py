@@ -121,6 +121,65 @@ def debug_page():
     response.headers["Expires"] = "0"
     return response
 
+def parse_form_data(request):
+    """Form veya JSON verilerini işler ve karakter özelliklerini içeren sözlük döndürür"""
+    # Form verilerini al
+    if request.is_json:
+        data = request.json
+        character_name = data.get('character_name', '')
+        character_type = data.get('character_type', '')
+        setting = data.get('setting', '')
+        theme = data.get('theme', '')
+        
+        try:
+            word_limit = int(data.get('word_limit', 200))
+        except ValueError:
+            logger.warning("Kelime sayısı geçersiz, varsayılan değer kullanılıyor.")
+            word_limit = 200
+            
+        image_api = data.get('image_api', 'dalle')
+        text_api = data.get('text_api', 'openai')
+        
+        # Karakter detaylarını al
+        character_attributes = {
+            'character_age': data.get('character_age', ''),
+            'character_gender': data.get('character_gender', ''),
+            'character_hair_color': data.get('character_hair_color', ''),
+            'character_hair_type': data.get('character_hair_type', ''),
+            'character_skin_color': data.get('character_skin_color', '')
+        }
+    else:
+        # Form verilerini al
+        character_name = request.form.get('character_name', '')
+        character_type = request.form.get('character_type', '')
+        setting = request.form.get('setting', '')
+        theme = request.form.get('theme', '')
+        
+        # word_limit ve api değerleri için hata kontrolü
+        try:
+            word_limit = int(request.form.get('word_limit', 200))
+        except ValueError:
+            logger.warning("Kelime sayısı geçersiz, varsayılan değer kullanılıyor.")
+            word_limit = 200
+            
+        image_api = request.form.get('image_api', 'dalle')
+        text_api = request.form.get('text_api', 'openai')
+        
+        # Karakter detaylarını al
+        character_attributes = {
+            'character_age': request.form.get('character_age', ''),
+            'character_gender': request.form.get('character_gender', ''),
+            'character_hair_color': request.form.get('character_hair_color', ''),
+            'character_hair_type': request.form.get('character_hair_type', ''),
+            'character_skin_color': request.form.get('character_skin_color', '')
+        }
+        
+    # Karakter özelliklerini logla
+    for key, value in character_attributes.items():
+        logger.info(f"Karakter özellik: {key} = {value}")
+        
+    return character_name, character_type, setting, theme, word_limit, image_api, text_api, character_attributes
+
 @app.route('/generate_tale', methods=['POST'])
 def generate_tale():
     try:
@@ -136,49 +195,8 @@ def generate_tale():
         except Exception as e:
             logger.error(f"İstek verisi loglanırken hata: {str(e)}")
         
-        # Form verilerini al
-        if request.is_json:
-            data = request.json
-            character_name = data.get('character_name', '')
-            character_type = data.get('character_type', '')
-            setting = data.get('setting', '')
-            theme = data.get('theme', '')
-            word_limit = int(data.get('word_limit', 200))
-            image_api = data.get('image_api', 'dalle')
-            text_api = data.get('text_api', 'openai')
-            # Karakter detaylarını al
-            character_attributes = {
-                'character_age': data.get('character_age', ''),
-                'character_gender': data.get('character_gender', ''),
-                'character_hair_color': data.get('character_hair_color', ''),
-                'character_hair_type': data.get('character_hair_type', ''),
-                'character_skin_color': data.get('character_skin_color', '')
-            }
-        else:
-            # Form verilerini al
-            character_name = request.form.get('character_name', '')
-            character_type = request.form.get('character_type', '')
-            setting = request.form.get('setting', '')
-            theme = request.form.get('theme', '')
-            
-            # word_limit ve api değerleri için hata kontrolü
-            try:
-                word_limit = int(request.form.get('word_limit', 200))
-            except ValueError:
-                logger.warning("Kelime sayısı geçersiz, varsayılan değer kullanılıyor.")
-                word_limit = 200
-                
-            image_api = request.form.get('image_api', 'dalle')
-            text_api = request.form.get('text_api', 'openai')
-            
-            # Karakter detaylarını al
-            character_attributes = {
-                'character_age': request.form.get('character_age', ''),
-                'character_gender': request.form.get('character_gender', ''),
-                'character_hair_color': request.form.get('character_hair_color', ''),
-                'character_hair_type': request.form.get('character_hair_type', ''),
-                'character_skin_color': request.form.get('character_skin_color', '')
-            }
+        # Form verilerini parse et
+        character_name, character_type, setting, theme, word_limit, image_api, text_api, character_attributes = parse_form_data(request)
         
         logger.info(f"Alınan form verileri: Karakter Adı: {character_name}, Karakter Türü: {character_type}, Karakter Özellikleri: {character_attributes}, Ortam: {setting}, Tema: {theme}, Kelime Sayısı: {word_limit}, Görsel API: {image_api}, Metin API: {text_api}")
         
@@ -717,6 +735,9 @@ def generate_page_image():
         setting = data.get('setting', '')
         page_number = data.get('page_number', 1)
         image_api = data.get('image_api', 'dalle')
+        
+        # Dump the entire data for debugging
+        logger.info(f"generate_page_image - FULL DATA: {data}")
         
         # Karakter özelliklerini al
         character_description = ""

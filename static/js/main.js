@@ -787,8 +787,15 @@ document.addEventListener('DOMContentLoaded', function() {
             character_type: characterInfo.character_type,
             setting: characterInfo.setting,
             page_number: pageIndex + 1,
-            image_api: characterInfo.image_api || 'dalle'
+            image_api: characterInfo.image_api || 'dalle',
+            character_age: characterInfo.character_age,
+            character_gender: characterInfo.character_gender,
+            character_hair_color: characterInfo.character_hair_color,
+            character_hair_type: characterInfo.character_hair_type,
+            character_skin_color: characterInfo.character_skin_color
         };
+        
+        console.log("generateImageForPage - FULL requestData:", requestData);
         
         // Promise döndür
         return new Promise((resolve, reject) => {
