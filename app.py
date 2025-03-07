@@ -206,6 +206,9 @@ def generate_tale():
             character_description = ""
             if 'character_age' in request.form and request.form['character_age']:
                 character_description += f"{request.form['character_age']} yaşında, "
+                
+            if 'character_gender' in request.form and request.form['character_gender']:
+                character_description += f"{request.form['character_gender']}, "
             
             hair_parts = []
             if 'character_hair_type' in request.form and request.form['character_hair_type']:
@@ -226,11 +229,16 @@ def generate_tale():
             
             # İlk sayfa için özel prompt oluştur
             image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} {character_description}karakteri {setting} ortamında: {first_section}"
+            # Prompt'u logla
+            prompt_logger.info(f"Görsel prompt 1: {image_prompt}")
         else:
             # Bölüm yoksa genel bir prompt kullan
             character_description = ""
             if 'character_age' in request.form and request.form['character_age']:
                 character_description += f"{request.form['character_age']} yaşında, "
+                
+            if 'character_gender' in request.form and request.form['character_gender']:
+                character_description += f"{request.form['character_gender']}, "
             
             hair_parts = []
             if 'character_hair_type' in request.form and request.form['character_hair_type']:
@@ -250,6 +258,8 @@ def generate_tale():
                 character_description = f"({character_description}) "
                 
             image_prompt = f"{character_name} adlı {character_type} {character_description}karakteri {setting} ortamında, {theme} temalı bir masal için çocuk kitabı tarzında illüstrasyon"
+            # Prompt'u logla
+            prompt_logger.info(f"Görsel prompt 2: {image_prompt}")
         
         # Görseli oluştur
         image_data = generate_image_for_section(image_prompt, image_api)
@@ -730,6 +740,8 @@ def generate_page_image():
         # Görsel oluşturma promptu hazırla
         image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} {character_description}karakteri {setting} ortamında: {page_text}"
         logger.info(f"Oluşturulan prompt: {image_prompt[:100]}...")
+        # Prompt'u tamamen logla
+        prompt_logger.info(f"Sayfa {page_number} için görsel prompt: {image_prompt}")
         
         # Görseli oluştur
         image_data = generate_image_for_section(image_prompt, image_api)
@@ -1142,8 +1154,10 @@ def generate_image_with_dalle(prompt):
     """OpenAI DALL-E API kullanarak görsel oluşturur"""
     try:
         # Prompt'u çocuk dostu hale getir ve yazı içermemesini sağla
-        enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında, hiçbir yazı, metin veya konuşma balonu içermeyen, yazısız bir resim: {prompt}"
+        enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında, KESİNLİKLE hiçbir yazı/metin içermeyen, yazısız ve konuşma balonsuz bir resim oluştur. Resimde hiçbir alfabe harfi veya yazı olmamalı: {prompt}"
         logger.info(f"DALL-E prompt: {enhanced_prompt[:100]}...")
+        # Prompt'u tamamen logla
+        prompt_logger.info(f"Tam DALL-E prompt: {enhanced_prompt}")
         
         # Rate limit kontrolü için basit hız sınırlama
         # En son DALL-E API çağrısı zamanını kontrol et
