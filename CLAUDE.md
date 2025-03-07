@@ -27,6 +27,8 @@
 - Yeniden başlat: `pkill -f "python app.py" && python app.py`
 - Prompt testi: `python test_prompt_length.py --counts 200 500 --api both`
 - API testleri: `python test_gemini.py` veya `python test_openai.py`
+- DALL-E 2 testi: `python test_dalle2.py --size 512x512 --language both`
+- DALL-E 2 stil testi: `python test_dalle2_styles.py --size 512x512`
 - Ses dosyaları: `python download_sounds.py`
 - Log dosyaları: `logs/` klasöründe tarih-saat damgalı dosyalar oluşturulur (örn: `app_YYYY-MM-DD_HH-MM-SS.log`)
 - Debug modu: Tarayıcıda `Alt+D`
@@ -102,10 +104,16 @@
 ## Proje Yapısı
 - `app.py`: Ana Flask sunucusu ve AI entegrasyonu
 - `static/`: Frontend varlıkları (CSS, JS, ses/görüntüler)
+  - `static/tales/all/`: Tüm masallar tek klasörde depolanır
+  - `static/tales/history/`: (Eski sistem) Geçmiş masallar için klasör
+  - `static/tales/favorites/`: (Eski sistem) Favori masallar için klasör
+  - `static/test_images/`: Test için oluşturulan görseller
 - `templates/`: HTML şablonları
 - `logs/`: Her oturumda oluşturulan tarih-saat damgalı log dosyaları
 - `test_prompt_length.py`: Kelime sayısı prompt testleri
 - `test_gemini.py`, `test_openai.py`: API test modülleri
+- `test_dalle2.py`: DALL-E 2 görsel üretim testi
+- `test_dalle2_styles.py`: DALL-E 2 stil prompt testi
 - `download_sounds.py`: Ses dosyalarını indirme scripti
 
 ## Araştırma Bulguları
