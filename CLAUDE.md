@@ -57,7 +57,9 @@
 - **API Limitleri**: 
   - OpenAI `max_tokens`: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
   - DALL-E: Dakikada 5 istek limiti (generate_image_with_dalle'de 12sn bekleme)
-  - DALL-E görsel boyutları: DALL-E 3 modeli sadece 1024x1024 veya 1792x1024 çözünürlükleri destekliyor (512x512 desteklenmiyor)
+  - DALL-E görsel boyutları: 
+    - DALL-E 3: Sadece 1024x1024 veya 1792x1024 çözünürlükleri destekliyor (512x512 desteklenmiyor)
+    - DALL-E 2: 256x256, 512x512, 1024x1024 çözünürlükleri destekliyor
   - **GPT Modelleri**:
     - İlk deneme: `gpt-4o-mini-2024-07-18` (versiyon 18.07.2024)
     - Yeniden deneme: `gpt-4-turbo-2024-04-09` (versiyon 09.04.2024)

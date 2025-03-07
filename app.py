@@ -1037,7 +1037,7 @@ def generate_image_with_dalle(prompt):
         response = openai_client.images.generate(
             model="dall-e-3",
             prompt=enhanced_prompt,
-            size="1024x1024",  # DALL-E 3 sadece 1024x1024 veya 1792x1024 destekliyor
+            size="1024x1024",
             quality="standard",
             n=1,
             style="vivid"  # "vivid" veya "natural" olabilir
@@ -1072,7 +1072,7 @@ def generate_image_with_dalle(prompt):
                 response = openai_client.images.generate(
                     model="dall-e-3",
                     prompt=enhanced_prompt,
-                    size="1024x1024",  # DALL-E 3 sadece 1024x1024 veya 1792x1024 destekliyor
+                    size="1024x1024",
                     quality="standard",
                     n=1,
                     style="vivid"
@@ -1112,7 +1112,7 @@ def generate_image_with_dalle(prompt):
                 response = openai_client.images.generate(
                     model="dall-e-3",
                     prompt=safe_prompt,
-                    size="1024x1024",  # DALL-E 3 sadece 1024x1024 veya 1792x1024 destekliyor
+                    size="1024x1024",
                     quality="standard",
                     n=1,
                     style="vivid"
@@ -1274,7 +1274,7 @@ def create_placeholder_image(text):
         
         # Hata durumunda çok basit bir görüntü oluştur
         try:
-            simple_image = Image.new('RGB', (512, 512), color=(240, 248, 255))
+            simple_image = Image.new('RGB', (1024, 1024), color=(240, 248, 255))
             buffer = io.BytesIO()
             simple_image.save(buffer, format="PNG")
             base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
