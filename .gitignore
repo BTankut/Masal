@@ -1,6 +1,16 @@
 # Log dosyaları
-logs/*.log
-logs/*.log.*
+logs/*
+!logs/.gitkeep
+
+# Tales ve test dosyaları (ana klasörleri koru ama içeriklerini izleme)
+static/tales/all/*
+!static/tales/all/.gitkeep
+static/tales/history/*
+!static/tales/history/.gitkeep
+static/tales/favorites/*
+!static/tales/favorites/.gitkeep
+static/test_images/*
+!static/test_images/.gitkeep
 
 # Geçici dosyalar
 __pycache__/
