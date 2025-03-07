@@ -50,12 +50,14 @@
 - **Frontend**: Modüler JS, responsive design, `window.log()`
 - **Veri Saklama**:
   - LocalStorage API ile masal geçmişi ve favori masallar (tarayıcı tarafı)
-  - `/static/tales/` klasöründe sunucu tarafında kayıtlı masallar (offline kullanım için)
+  - `/static/tales/all/` klasöründe sunucu tarafında tüm masallar (offline kullanım için)
   - Hibrit önbellek stratejisi: Hem client-side hem server-side veri saklama
+  - JSON meta verileri ile masalların tipinin belirlenmesi (geçmiş/favori)
 - **AI İçerik**: Daima çocuk dostu ve yaşa uygun
 - **API Limitleri**: 
   - OpenAI `max_tokens`: `max_tokens=min(4000, word_limit * 10)` kullanarak sınır aşımını önle
   - DALL-E: Dakikada 5 istek limiti (generate_image_with_dalle'de 12sn bekleme)
+  - DALL-E görsel boyutları: DALL-E 3 modeli sadece 1024x1024 veya 1792x1024 çözünürlükleri destekliyor (512x512 desteklenmiyor)
   - **GPT Modelleri**:
     - İlk deneme: `gpt-4o-mini-2024-07-18` (versiyon 18.07.2024)
     - Yeniden deneme: `gpt-4-turbo-2024-04-09` (versiyon 09.04.2024)
@@ -130,8 +132,9 @@
       - Masal geçmişi: `taleHistory` anahtarı ile son 5 masal saklanır
       - Favori masallar: `taleFavorites` anahtarı ile en fazla 5 favori masal saklanır
     - **Fiziksel Dosya Depolama**:
-      - Sunucu: `/static/tales/history/` ve `/static/tales/favorites/` klasörlerinde JSON, görsel ve ses dosyaları
+      - Sunucu: `/static/tales/all/` klasöründe tüm masallar (geçmiş ve favoriler) için JSON, görsel ve ses dosyaları
       - Dosya organizasyonu: Her masal için ID bazlı JSON, görsel ve sayfa dosyaları
+      - Masalların tipi (geçmiş/favori) JSON içinde 'type' ve 'isFavorite' alanları ile belirlenir
     - **Offline Erişim**:
       - Masallar hem tarayıcıda hem sunucuda saklanır
       - Offline kullanım için önbellekleme mekanizması

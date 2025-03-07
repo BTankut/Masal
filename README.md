@@ -108,8 +108,7 @@ masal/
 │   │   └── main.js         # Frontend fonksiyonları
 │   ├── img/                # Statik görseller
 │   └── tales/              # Sunucuda saklanan masal verileri
-│       ├── favorites/      # Favori masallar için JSON, görsel, ses dosyaları
-│       └── history/        # Geçmiş masallar için JSON, görsel, ses dosyaları
+│       └── all/            # Tüm masallar için JSON, görsel, ses dosyaları
 └── templates/
     ├── index.html          # Ana uygulama şablonu
     └── debug.html          # Debug ve veri yönetimi sayfası
@@ -169,7 +168,7 @@ python test_prompt_length.py --counts 200 500 --api both  # Her iki API için be
     - Masal geçmişi: Son 5 oluşturulan masal otomatik kaydedilir (`taleHistory`)
     - Favoriler: En fazla 5 masal favorilere eklenebilir (`taleFavorites`)
   - **Sunucu Depolama**:
-    - `/static/tales/history/` ve `/static/tales/favorites/` klasörlerinde
+    - `/static/tales/all/` klasöründe tüm masallar tek bir yerde depolanır
     - Her masal için JSON, görsel ve ses dosyaları saklanır
     - Offline kullanım için veriler tarayıcıda ve sunucuda kaydedilir
   - **Önbellekleme Stratejisi**:
