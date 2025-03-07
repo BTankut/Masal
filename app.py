@@ -1010,7 +1010,7 @@ def generate_image_with_dalle(prompt):
         response = openai_client.images.generate(
             model="dall-e-3",
             prompt=enhanced_prompt,
-            size="1024x1024",
+            size="512x512",
             quality="standard",
             n=1,
             style="vivid"  # "vivid" veya "natural" olabilir
@@ -1045,7 +1045,7 @@ def generate_image_with_dalle(prompt):
                 response = openai_client.images.generate(
                     model="dall-e-3",
                     prompt=enhanced_prompt,
-                    size="1024x1024",
+                    size="512x512",
                     quality="standard",
                     n=1,
                     style="vivid"
@@ -1085,7 +1085,7 @@ def generate_image_with_dalle(prompt):
                 response = openai_client.images.generate(
                     model="dall-e-3",
                     prompt=safe_prompt,
-                    size="1024x1024",
+                    size="512x512",
                     quality="standard",
                     n=1,
                     style="vivid"
