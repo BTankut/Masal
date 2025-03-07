@@ -228,9 +228,9 @@ def generate_tale():
                 character_description = f"({character_description}) "
             
             # İlk sayfa için özel prompt oluştur
-            image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} {character_description}karakteri {setting} ortamında: {first_section}"
+            image_prompt = f"{character_name} adlı {character_description}{character_type} karakteri {setting} ortamında: {first_section}"
             # Prompt'u logla
-            prompt_logger.info(f"Görsel prompt 1: {image_prompt}")
+            prompt_logger.info(f"Image prompt: {image_prompt}")
         else:
             # Bölüm yoksa genel bir prompt kullan
             character_description = ""
@@ -257,9 +257,9 @@ def generate_tale():
                 character_description = character_description.rstrip(", ")
                 character_description = f"({character_description}) "
                 
-            image_prompt = f"{character_name} adlı {character_type} {character_description}karakteri {setting} ortamında, {theme} temalı bir masal için çocuk kitabı tarzında illüstrasyon"
+            image_prompt = f"{character_name} adlı {character_description}{character_type} karakteri {setting} ortamında, {theme} temalı bir masal için illüstrasyon"
             # Prompt'u logla
-            prompt_logger.info(f"Görsel prompt 2: {image_prompt}")
+            prompt_logger.info(f"Image prompt: {image_prompt}")
         
         # Görseli oluştur
         image_data = generate_image_for_section(image_prompt, image_api)
@@ -738,10 +738,10 @@ def generate_page_image():
         logger.info(f"Sayfa {page_number} için görsel isteği alındı")
         
         # Görsel oluşturma promptu hazırla
-        image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} {character_description}karakteri {setting} ortamında: {page_text}"
+        image_prompt = f"{character_name} adlı {character_description}{character_type} karakteri {setting} ortamında: {page_text}"
         logger.info(f"Oluşturulan prompt: {image_prompt[:100]}...")
         # Prompt'u tamamen logla
-        prompt_logger.info(f"Sayfa {page_number} için görsel prompt: {image_prompt}")
+        prompt_logger.info(f"Page {page_number} image prompt: {image_prompt}")
         
         # Görseli oluştur
         image_data = generate_image_for_section(image_prompt, image_api)
@@ -1154,10 +1154,10 @@ def generate_image_with_dalle(prompt):
     """OpenAI DALL-E API kullanarak görsel oluşturur"""
     try:
         # Prompt'u çocuk dostu hale getir ve yazı içermemesini sağla
-        enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında, KESİNLİKLE hiçbir yazı/metin içermeyen, yazısız ve konuşma balonsuz bir resim oluştur. Resimde hiçbir alfabe harfi veya yazı olmamalı: {prompt}"
+        enhanced_prompt = f"Turkish children's book style illustration with NO TEXT. Create a colorful, cartoon-style image with ABSOLUTELY NO words, text, or speech bubbles. The image must NOT contain any letters, alphabet characters, or written text: {prompt}"
         logger.info(f"DALL-E prompt: {enhanced_prompt[:100]}...")
         # Prompt'u tamamen logla
-        prompt_logger.info(f"Tam DALL-E prompt: {enhanced_prompt}")
+        prompt_logger.info(f"DALL-E prompt: {enhanced_prompt}")
         
         # Rate limit kontrolü için basit hız sınırlama
         # En son DALL-E API çağrısı zamanını kontrol et
