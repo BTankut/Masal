@@ -204,23 +204,30 @@ def generate_tale():
             first_section = sections[0]
             # Karakter özelliklerini al ve prompta ekle
             character_description = ""
-            if 'character_age' in request.form and request.form['character_age']:
-                character_description += f"{request.form['character_age']} yaşında, "
+            # Debug log için özellikleri göster
+            logger.info(f"character_age: {request.form.get('character_age', 'YOK')}")
+            logger.info(f"character_gender: {request.form.get('character_gender', 'YOK')}")
+            logger.info(f"character_hair_color: {request.form.get('character_hair_color', 'YOK')}")
+            logger.info(f"character_hair_type: {request.form.get('character_hair_type', 'YOK')}")
+            logger.info(f"character_skin_color: {request.form.get('character_skin_color', 'YOK')}")
+            
+            if request.form.get('character_age'):
+                character_description += f"{request.form.get('character_age')} yaşında, "
                 
-            if 'character_gender' in request.form and request.form['character_gender']:
-                character_description += f"{request.form['character_gender']}, "
+            if request.form.get('character_gender'):
+                character_description += f"{request.form.get('character_gender')}, "
             
             hair_parts = []
-            if 'character_hair_type' in request.form and request.form['character_hair_type']:
-                hair_parts.append(request.form['character_hair_type'])
-            if 'character_hair_color' in request.form and request.form['character_hair_color']:
-                hair_parts.append(request.form['character_hair_color'])
+            if request.form.get('character_hair_type'):
+                hair_parts.append(request.form.get('character_hair_type'))
+            if request.form.get('character_hair_color'):
+                hair_parts.append(request.form.get('character_hair_color'))
             
             if hair_parts:
                 character_description += f"{' '.join(hair_parts)} saçlı, "
             
-            if 'character_skin_color' in request.form and request.form['character_skin_color']:
-                character_description += f"{request.form['character_skin_color']} tenli, "
+            if request.form.get('character_skin_color'):
+                character_description += f"{request.form.get('character_skin_color')} tenli, "
             
             # Son virgülü ve boşluğu kaldır
             if character_description:
@@ -234,23 +241,30 @@ def generate_tale():
         else:
             # Bölüm yoksa genel bir prompt kullan
             character_description = ""
-            if 'character_age' in request.form and request.form['character_age']:
-                character_description += f"{request.form['character_age']} yaşında, "
+            # Debug log için özellikleri göster
+            logger.info(f"Bölüm yoksa - character_age: {request.form.get('character_age', 'YOK')}")
+            logger.info(f"Bölüm yoksa - character_gender: {request.form.get('character_gender', 'YOK')}")
+            logger.info(f"Bölüm yoksa - character_hair_color: {request.form.get('character_hair_color', 'YOK')}")
+            logger.info(f"Bölüm yoksa - character_hair_type: {request.form.get('character_hair_type', 'YOK')}")
+            logger.info(f"Bölüm yoksa - character_skin_color: {request.form.get('character_skin_color', 'YOK')}")
+            
+            if request.form.get('character_age'):
+                character_description += f"{request.form.get('character_age')} yaşında, "
                 
-            if 'character_gender' in request.form and request.form['character_gender']:
-                character_description += f"{request.form['character_gender']}, "
+            if request.form.get('character_gender'):
+                character_description += f"{request.form.get('character_gender')}, "
             
             hair_parts = []
-            if 'character_hair_type' in request.form and request.form['character_hair_type']:
-                hair_parts.append(request.form['character_hair_type'])
-            if 'character_hair_color' in request.form and request.form['character_hair_color']:
-                hair_parts.append(request.form['character_hair_color'])
+            if request.form.get('character_hair_type'):
+                hair_parts.append(request.form.get('character_hair_type'))
+            if request.form.get('character_hair_color'):
+                hair_parts.append(request.form.get('character_hair_color'))
             
             if hair_parts:
                 character_description += f"{' '.join(hair_parts)} saçlı, "
             
-            if 'character_skin_color' in request.form and request.form['character_skin_color']:
-                character_description += f"{request.form['character_skin_color']} tenli, "
+            if request.form.get('character_skin_color'):
+                character_description += f"{request.form.get('character_skin_color')} tenli, "
             
             # Son virgülü ve boşluğu kaldır
             if character_description:
@@ -711,6 +725,13 @@ def generate_page_image():
         character_hair_type = data.get('character_hair_type', '')
         character_hair_color = data.get('character_hair_color', '')
         character_skin_color = data.get('character_skin_color', '')
+        
+        # Debug için tüm özellikleri logla
+        logger.info(f"generate_page_image - character_age: {character_age}")
+        logger.info(f"generate_page_image - character_gender: {character_gender}")
+        logger.info(f"generate_page_image - character_hair_type: {character_hair_type}")
+        logger.info(f"generate_page_image - character_hair_color: {character_hair_color}")
+        logger.info(f"generate_page_image - character_skin_color: {character_skin_color}")
         
         if character_age:
             character_description += f"{character_age} yaşında, "
