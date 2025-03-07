@@ -476,7 +476,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                         character_name: characterName,
                                         character_type: characterType, 
                                         setting: setting,
-                                        image_api: imageApi
+                                        image_api: imageApi,
+                                        character_age: document.getElementById('character-age')?.value || '',
+                                        character_hair_color: document.getElementById('character-hair-color')?.value || '',
+                                        character_hair_type: document.getElementById('character-hair-type')?.value || '',
+                                        character_skin_color: document.getElementById('character-skin-color')?.value || ''
                                     })
                                     .then(() => resolve())
                                     .catch(() => resolve()); // Hata olsa da devam et
@@ -2713,4 +2717,84 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Sayfa yüklendiğinde tema tercihini yükle
     loadSavedTheme();
+    
+    // Karakter özelliklerini yükleme
+    loadCharacterAttributes();
+    
+    // Karakter özelliklerini kaydetme
+    function saveCharacterAttributes() {
+        const characterName = document.getElementById('character-name').value;
+        const characterAge = document.getElementById('character-age').value;
+        const characterHairColor = document.getElementById('character-hair-color').value;
+        const characterHairType = document.getElementById('character-hair-type').value;
+        const characterSkinColor = document.getElementById('character-skin-color').value;
+        
+        // Boş değerleri kaydetme
+        const attributes = {};
+        if (characterName) attributes.name = characterName;
+        if (characterAge) attributes.age = characterAge;
+        if (characterHairColor) attributes.hairColor = characterHairColor;
+        if (characterHairType) attributes.hairType = characterHairType;
+        if (characterSkinColor) attributes.skinColor = characterSkinColor;
+        
+        // Karakter adına göre özellik saklama
+        if (characterName) {
+            // Tüm kayıtlı karakterleri al
+            let savedCharacters = {};
+            try {
+                const savedData = localStorage.getItem('characterAttributes');
+                if (savedData) {
+                    savedCharacters = JSON.parse(savedData);
+                }
+            } catch(e) {
+                console.error("Karakter özellikleri yüklenirken hata:", e);
+                savedCharacters = {};
+            }
+            
+            // Bu karakterin özelliklerini güncelle
+            savedCharacters[characterName] = attributes;
+            
+            // LocalStorage'a kaydet
+            localStorage.setItem('characterAttributes', JSON.stringify(savedCharacters));
+            console.log(`"${characterName}" için özellikler kaydedildi:`, attributes);
+        }
+    }
+    
+    // Karakter özelliklerini yükleme
+    function loadCharacterAttributes() {
+        // Tüm kayıtlı karakterleri al
+        let savedCharacters = {};
+        try {
+            const savedData = localStorage.getItem('characterAttributes');
+            if (savedData) {
+                savedCharacters = JSON.parse(savedData);
+            }
+        } catch(e) {
+            console.error("Karakter özellikleri yüklenirken hata:", e);
+            return;
+        }
+        
+        // Karakter adı alanının değişiklik olayını dinle
+        const characterNameInput = document.getElementById('character-name');
+        if (characterNameInput) {
+            characterNameInput.addEventListener('change', function() {
+                const name = this.value.trim();
+                if (name && savedCharacters[name]) {
+                    // Bu isimde kayıtlı karakter varsa özelliklerini form elemanlarına yükle
+                    const attributes = savedCharacters[name];
+                    console.log(`"${name}" için kayıtlı özellikler bulundu:`, attributes);
+                    
+                    if (attributes.age) document.getElementById('character-age').value = attributes.age;
+                    if (attributes.hairColor) document.getElementById('character-hair-color').value = attributes.hairColor;
+                    if (attributes.hairType) document.getElementById('character-hair-type').value = attributes.hairType;
+                    if (attributes.skinColor) document.getElementById('character-skin-color').value = attributes.skinColor;
+                }
+            });
+        }
+    }
+    
+    // Form gönderildiğinde karakter özelliklerini kaydet
+    generateForm.addEventListener('submit', function() {
+        saveCharacterAttributes();
+    });
 });

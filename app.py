@@ -146,6 +146,13 @@ def generate_tale():
             word_limit = int(data.get('word_limit', 200))
             image_api = data.get('image_api', 'dalle')
             text_api = data.get('text_api', 'openai')
+            # Karakter detaylarını al
+            character_attributes = {
+                'character_age': data.get('character_age', ''),
+                'character_hair_color': data.get('character_hair_color', ''),
+                'character_hair_type': data.get('character_hair_type', ''),
+                'character_skin_color': data.get('character_skin_color', '')
+            }
         else:
             # Form verilerini al
             character_name = request.form.get('character_name', '')
@@ -162,8 +169,16 @@ def generate_tale():
                 
             image_api = request.form.get('image_api', 'dalle')
             text_api = request.form.get('text_api', 'openai')
+            
+            # Karakter detaylarını al
+            character_attributes = {
+                'character_age': request.form.get('character_age', ''),
+                'character_hair_color': request.form.get('character_hair_color', ''),
+                'character_hair_type': request.form.get('character_hair_type', ''),
+                'character_skin_color': request.form.get('character_skin_color', '')
+            }
         
-        logger.info(f"Alınan form verileri: Karakter Adı: {character_name}, Karakter Türü: {character_type}, Ortam: {setting}, Tema: {theme}, Kelime Sayısı: {word_limit}, Görsel API: {image_api}, Metin API: {text_api}")
+        logger.info(f"Alınan form verileri: Karakter Adı: {character_name}, Karakter Türü: {character_type}, Karakter Özellikleri: {character_attributes}, Ortam: {setting}, Tema: {theme}, Kelime Sayısı: {word_limit}, Görsel API: {image_api}, Metin API: {text_api}")
         
         # Veri doğrulama
         if not character_name or not character_type or not setting or not theme:
@@ -172,7 +187,7 @@ def generate_tale():
         
         # Masal oluşturma
         logger.info("Masal metni oluşturuluyor...")
-        tale_text = generate_tale_text(character_name, character_type, setting, theme, word_limit, text_api)
+        tale_text = generate_tale_text(character_name, character_type, setting, theme, word_limit, text_api, character_attributes)
         
         # Başlık oluştur
         tale_title = f"{character_name}'nin {setting} Macerası"
@@ -185,11 +200,54 @@ def generate_tale():
         sections = split_text_into_sections(tale_text, 50)
         if sections:
             first_section = sections[0]
+            # Karakter özelliklerini al ve prompta ekle
+            character_description = ""
+            if 'character_age' in request.form and request.form['character_age']:
+                character_description += f"{request.form['character_age']} yaşında, "
+            
+            hair_parts = []
+            if 'character_hair_type' in request.form and request.form['character_hair_type']:
+                hair_parts.append(request.form['character_hair_type'])
+            if 'character_hair_color' in request.form and request.form['character_hair_color']:
+                hair_parts.append(request.form['character_hair_color'])
+            
+            if hair_parts:
+                character_description += f"{' '.join(hair_parts)} saçlı, "
+            
+            if 'character_skin_color' in request.form and request.form['character_skin_color']:
+                character_description += f"{request.form['character_skin_color']} tenli, "
+            
+            # Son virgülü ve boşluğu kaldır
+            if character_description:
+                character_description = character_description.rstrip(", ")
+                character_description = f"({character_description}) "
+            
             # İlk sayfa için özel prompt oluştur
-            image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} karakteri {setting} ortamında: {first_section}"
+            image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} {character_description}karakteri {setting} ortamında: {first_section}"
         else:
             # Bölüm yoksa genel bir prompt kullan
-            image_prompt = f"{character_name} adlı {character_type} karakteri {setting} ortamında, {theme} temalı bir masal için çocuk kitabı tarzında illüstrasyon"
+            character_description = ""
+            if 'character_age' in request.form and request.form['character_age']:
+                character_description += f"{request.form['character_age']} yaşında, "
+            
+            hair_parts = []
+            if 'character_hair_type' in request.form and request.form['character_hair_type']:
+                hair_parts.append(request.form['character_hair_type'])
+            if 'character_hair_color' in request.form and request.form['character_hair_color']:
+                hair_parts.append(request.form['character_hair_color'])
+            
+            if hair_parts:
+                character_description += f"{' '.join(hair_parts)} saçlı, "
+            
+            if 'character_skin_color' in request.form and request.form['character_skin_color']:
+                character_description += f"{request.form['character_skin_color']} tenli, "
+            
+            # Son virgülü ve boşluğu kaldır
+            if character_description:
+                character_description = character_description.rstrip(", ")
+                character_description = f"({character_description}) "
+                
+            image_prompt = f"{character_name} adlı {character_type} {character_description}karakteri {setting} ortamında, {theme} temalı bir masal için çocuk kitabı tarzında illüstrasyon"
         
         # Görseli oluştur
         image_data = generate_image_for_section(image_prompt, image_api)
@@ -634,10 +692,37 @@ def generate_page_image():
         page_number = data.get('page_number', 1)
         image_api = data.get('image_api', 'dalle')
         
+        # Karakter özelliklerini al
+        character_description = ""
+        character_age = data.get('character_age', '')
+        character_hair_type = data.get('character_hair_type', '')
+        character_hair_color = data.get('character_hair_color', '')
+        character_skin_color = data.get('character_skin_color', '')
+        
+        if character_age:
+            character_description += f"{character_age} yaşında, "
+        
+        hair_parts = []
+        if character_hair_type:
+            hair_parts.append(character_hair_type)
+        if character_hair_color:
+            hair_parts.append(character_hair_color)
+        
+        if hair_parts:
+            character_description += f"{' '.join(hair_parts)} saçlı, "
+        
+        if character_skin_color:
+            character_description += f"{character_skin_color} tenli, "
+        
+        # Son virgülü ve boşluğu kaldır
+        if character_description:
+            character_description = character_description.rstrip(", ")
+            character_description = f"({character_description}) "
+        
         logger.info(f"Sayfa {page_number} için görsel isteği alındı")
         
         # Görsel oluşturma promptu hazırla
-        image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} karakteri {setting} ortamında: {page_text}"
+        image_prompt = f"Çocuk kitabı tarzında, {character_name} adlı {character_type} {character_description}karakteri {setting} ortamında: {page_text}"
         logger.info(f"Oluşturulan prompt: {image_prompt[:100]}...")
         
         # Görseli oluştur
@@ -752,13 +837,41 @@ def create_audio(text):
         logger.error(traceback.format_exc())
         raise
 
-def generate_tale_text(character_name, character_type, setting, theme, word_limit, text_api='openai'):
+def generate_tale_text(character_name, character_type, setting, theme, word_limit, text_api='openai', character_attributes=None):
     """Gemini API veya OpenAI API kullanarak masal metni oluşturur"""
     try:
+        # Karakter bilgilerini al
+        character_description = ""
+        if character_attributes:
+            description_parts = []
+            age = character_attributes.get('character_age')
+            hair_color = character_attributes.get('character_hair_color')
+            hair_type = character_attributes.get('character_hair_type')
+            skin_color = character_attributes.get('character_skin_color')
+            
+            if age:
+                description_parts.append(f"{age} yaşında")
+            if hair_color and hair_type:
+                description_parts.append(f"{hair_type} {hair_color} saçlı")
+            elif hair_color:
+                description_parts.append(f"{hair_color} saçlı")
+            elif hair_type:
+                description_parts.append(f"{hair_type} saçlı")
+            if skin_color:
+                description_parts.append(f"{skin_color} tenli")
+            
+            if description_parts:
+                character_description = f"Fiziksel özellikler: {', '.join(description_parts)}. "
+                logger.info(f"Karakter detayları: {character_description}")
+        
+        # Kelime limitini 1.4 ile çarp - daha gerçekçi sayılara ulaşmak için
+        adjusted_word_limit = int(word_limit * 1.4)
+        logger.info(f"Orijinal kelime limiti: {word_limit}, Ayarlanmış limit: {adjusted_word_limit}")
+        
         # Kullanıcı seçimine göre API kullan
         if text_api == 'openai' and openai_client:
             try:
-                return generate_tale_text_with_openai(character_name, character_type, setting, theme, word_limit)
+                return generate_tale_text_with_openai(character_name, character_type, setting, theme, adjusted_word_limit, character_description)
             except Exception as e:
                 logger.warning(f"OpenAI ile masal metni oluşturulamadı, Gemini denenecek: {str(e)}")
                 # OpenAI ile başarısız olursa Gemini'ye devam et
@@ -796,12 +909,13 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
                         raise ValueError("Metin oluşturma için hiçbir API kullanılamıyor.")
         
         prompt = f"""
-        GÖREV: Tam olarak {word_limit} kelimeden oluşan bir çocuk masalı yaz.
+        GÖREV: Tam olarak {adjusted_word_limit} kelimeden oluşan bir çocuk masalı yaz.
 
         ÖNEMLİ TALİMATLAR:
-        1. Hikaye TAM OLARAK {word_limit} kelime içermeli
+        1. Hikaye TAM OLARAK {adjusted_word_limit} kelime içermeli
         2. Hikaye şunları içermeli:
            - Ana karakter: {character_name} adında bir {character_type}
+           - {character_description}
            - Ortam: {setting}
            - Tema: {theme}
         3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
@@ -811,7 +925,7 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         7. Ne bir kelime fazla, ne bir kelime eksik olmalı
 
         ÇOK ÖNEMLİ:
-        - Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {word_limit} kelimedir" gibi ifadeler kullanma)
+        - Kelime sayısını metnin kendisinde belirtme (yani metinde "Bu hikaye {adjusted_word_limit} kelimedir" gibi ifadeler kullanma)
         - Asla "Unutmayın bu masal tam olarak X kelime içeriyor" veya benzeri ifadeler ekleme
         - Sadece masal içeriğini yaz, başka açıklama ekleme
         """
@@ -824,27 +938,28 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         word_count = len(words)
         logger.info(f"Model tarafından üretilen kelime sayısı: {word_count}")
         
-        if word_count > word_limit * 1.2:  # %20 tolerans
-            logger.info(f"Kelime sayısı fazla, {word_limit} kelimeye kısaltılıyor...")
-            tale_text = ' '.join(words[:word_limit])
-        elif word_count < word_limit * 0.8:  # Kelime sayısı %20'den fazla az ise
-            logger.warning(f"Kelime sayısı çok az ({word_count}), istenen: {word_limit}. Yeniden deneniyor...")
+        if word_count > adjusted_word_limit * 1.2:  # %20 tolerans
+            logger.info(f"Kelime sayısı fazla, {adjusted_word_limit} kelimeye kısaltılıyor...")
+            tale_text = ' '.join(words[:adjusted_word_limit])
+        elif word_count < adjusted_word_limit * 0.8:  # Kelime sayısı %20'den fazla az ise
+            logger.warning(f"Kelime sayısı çok az ({word_count}), istenen: {adjusted_word_limit}. Yeniden deneniyor...")
             
             # Daha sıkı kontrollerle bir retry prompt oluşturalım
             retry_prompt = f"""
-            GÖREV: Tam olarak {word_limit} kelimeden oluşan bir çocuk masalı yaz.
+            GÖREV: Tam olarak {adjusted_word_limit} kelimeden oluşan bir çocuk masalı yaz.
 
             ÖNEMLİ TALİMATLAR (DİKKATLİCE UYGULANACAK):
-            1. Hikaye TAM OLARAK {word_limit} kelime içermeli - kelime sayacı kullanarak ÜÇ KEZ sayımı doğrula
+            1. Hikaye TAM OLARAK {adjusted_word_limit} kelime içermeli - kelime sayacı kullanarak ÜÇ KEZ sayımı doğrula
             2. Hikaye şunları içermeli:
                - Ana karakter: {character_name} adında bir {character_type}
+               - {character_description}
                - Ortam: {setting}
                - Tema: {theme}
             3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
             4. Basit Türkçe kullan
             5. Başlık EKLEME
             6. Kelime sayısını metnin içinde belirtme (yani "bu masal X kelimedir" gibi cümleler kullanma)
-            7. Masal {word_limit} KELİMEDEN NE BİR FAZLA NE BİR EKSİK olmalı
+            7. Masal {adjusted_word_limit} KELİMEDEN NE BİR FAZLA NE BİR EKSİK olmalı
             8. Sadece masal metnini ver, açıklama veya not ekleme
             9. Asla "Unutmayın bu masal tam olarak X kelime içeriyor" veya benzeri ifadeler ekleme
             """
@@ -858,11 +973,11 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
                 retry_word_count = len(retry_text.split())
                 logger.info(f"Yeniden deneme sonucu kelime sayısı: {retry_word_count}")
                 
-                if abs(retry_word_count - word_limit) < abs(word_count - word_limit):
-                    logger.info(f"Yeniden deneme daha iyi sonuç verdi. Önceki: {word_count}, Yeni: {retry_word_count}, Hedef: {word_limit}")
+                if abs(retry_word_count - adjusted_word_limit) < abs(word_count - adjusted_word_limit):
+                    logger.info(f"Yeniden deneme daha iyi sonuç verdi. Önceki: {word_count}, Yeni: {retry_word_count}, Hedef: {adjusted_word_limit}")
                     return retry_text
                 else:
-                    logger.info(f"Yeniden deneme daha iyi sonuç vermedi. Önceki: {word_count}, Yeni: {retry_word_count}, Hedef: {word_limit}")
+                    logger.info(f"Yeniden deneme daha iyi sonuç vermedi. Önceki: {word_count}, Yeni: {retry_word_count}, Hedef: {adjusted_word_limit}")
             except Exception as retry_error:
                 logger.error(f"Yeniden deneme sırasında hata: {str(retry_error)}")
                 logger.debug(f"Önceki sonuç kullanılıyor (kelime sayısı: {word_count})")
@@ -874,7 +989,7 @@ def generate_tale_text(character_name, character_type, setting, theme, word_limi
         logger.error(traceback.format_exc())
         return f"Masal oluşturulamadı. Hata: {str(e)}"
         
-def generate_tale_text_with_openai(character_name, character_type, setting, theme, word_limit):
+def generate_tale_text_with_openai(character_name, character_type, setting, theme, word_limit, character_description=""):
     """OpenAI API kullanarak masal metni oluşturur"""
     logger.info("OpenAI API ile masal metni oluşturuluyor...")
     
@@ -885,6 +1000,7 @@ def generate_tale_text_with_openai(character_name, character_type, setting, them
     1. Hikaye TAM OLARAK {word_limit} kelime içermeli
     2. Hikaye şunları içermeli:
        - Ana karakter: {character_name} adında bir {character_type}
+       - {character_description}
        - Ortam: {setting}
        - Tema: {theme}
     3. Çocuk dostu ve eğitici olmalı (7-10 yaş)
@@ -1016,8 +1132,8 @@ def generate_image_for_section(section_text, image_api='dalle'):
 def generate_image_with_dalle(prompt):
     """OpenAI DALL-E API kullanarak görsel oluşturur"""
     try:
-        # Prompt'u çocuk dostu hale getir
-        enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında: {prompt}"
+        # Prompt'u çocuk dostu hale getir ve yazı içermemesini sağla
+        enhanced_prompt = f"Çocuk dostu, renkli, çizgi film tarzında, hiç yazı veya konuşma balonu içermeyen bir resim: {prompt}"
         logger.info(f"DALL-E prompt: {enhanced_prompt[:100]}...")
         
         # Rate limit kontrolü için basit hız sınırlama
