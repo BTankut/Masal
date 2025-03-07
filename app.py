@@ -276,11 +276,8 @@ def save_tale():
         
         logger.info(f"save_tale: Masal kaydediliyor - ID: {tale_id}, Tür: {tale_type}, Başlık: {tale_title}")
         
-        # Dizini belirle
-        if tale_type == 'favorites':
-            directory = 'static/tales/favorites'
-        else:
-            directory = 'static/tales/history'
+        # Tek bir dizin kullan
+        directory = 'static/tales/all'
         
         # Klasör yoksa oluştur
         os.makedirs(directory, exist_ok=True)
@@ -294,7 +291,9 @@ def save_tale():
             'characterName': data.get('characterName', ''),
             'characterType': data.get('characterType', ''),
             'setting': data.get('setting', ''),
-            'theme': data.get('theme', '')
+            'theme': data.get('theme', ''),
+            'type': tale_type,  # Masal tipini (history veya favorites) JSON içine de ekle
+            'isFavorite': tale_type == 'favorites'  # Favorilere ait mi işareti ekle
         }
         
         # JSON dosyasını kaydet
@@ -407,11 +406,8 @@ def list_tales():
         
         logger.info(f"list_tales: {tale_type} tipindeki masallar listeleniyor")
         
-        # Dizini belirle
-        if tale_type == 'favorites':
-            directory = 'static/tales/favorites'
-        else:
-            directory = 'static/tales/history'
+        # Tek klasör kullan
+        directory = 'static/tales/all'
         
         # Klasör yoksa oluştur
         os.makedirs(directory, exist_ok=True)
@@ -429,6 +425,15 @@ def list_tales():
                 
                 # Dosya adından ID al
                 tale_id = os.path.basename(json_file).replace('.json', '')
+                
+                # Masal tipine göre filtrele - JSON içindeki type değerine göre
+                tale_data_type = tale_data.get('type', 'history')
+                if tale_type != 'all' and tale_data_type != tale_type:
+                    # İstenen tipe uymayan masalları atla
+                    continue
+                
+                # Favori ise özellikle belirt
+                is_favorite = tale_data.get('isFavorite', False) or tale_data_type == 'favorites'
                 
                 # Görsel ve ses dosyalarını kontrol et
                 image_path = f"{directory}/{tale_id}_image.jpg"
@@ -451,7 +456,8 @@ def list_tales():
                     'page_count': len(page_files),
                     'has_audio': len(audio_files) > 0,
                     'has_page_images': len(page_image_files) > 0,
-                    'type': tale_type
+                    'type': tale_data_type,
+                    'isFavorite': is_favorite
                 }
                 
                 logger.debug(f"list_tales: Masal bilgileri: {tale_info}")
@@ -483,24 +489,43 @@ def clear_tales():
         
         logger.info(f"clear_tales: {tale_type} tipindeki masallar temizleniyor")
         
-        directories = []
-        if tale_type == 'all' or tale_type == 'history':
-            directories.append('static/tales/history')
-        if tale_type == 'all' or tale_type == 'favorites':
-            directories.append('static/tales/favorites')
+        directory = 'static/tales/all'
         
-        for directory in directories:
-            if os.path.exists(directory):
+        # Tek klasör olduğu için, favoriler veya geçmişe göre filtreleyerek silme yapmalıyız
+        if os.path.exists(directory):
+            if tale_type == 'all':
+                # Tüm dosyaları temizle
                 try:
-                    # Tüm dosyaları temizle
                     for file in os.listdir(directory):
                         file_path = os.path.join(directory, file)
                         if os.path.isfile(file_path):
                             os.unlink(file_path)
-                    
-                    logger.info(f"clear_tales: {directory} içindeki tüm dosyalar temizlendi")
+                    logger.info(f"clear_tales: Tüm masallar silindi")
                 except Exception as e:
-                    logger.error(f"clear_tales: {directory} temizlenirken hata: {e}")
+                    logger.error(f"clear_tales: Masallar silinirken hata: {e}")
+            else:
+                # Belirli tipteki masalları bul ve sil
+                json_files = glob.glob(f"{directory}/*.json")
+                for json_file in json_files:
+                    try:
+                        # JSON dosyasını oku ve tipini kontrol et
+                        with open(json_file, 'r', encoding='utf-8') as f:
+                            tale_data = json.load(f)
+                        
+                        tale_data_type = tale_data.get('type', 'history')
+                        if tale_data_type == tale_type:
+                            tale_id = os.path.basename(json_file).replace('.json', '')
+                            
+                            # Bu masala ait tüm dosyaları sil
+                            for file in os.listdir(directory):
+                                if file.startswith(tale_id):
+                                    file_path = os.path.join(directory, file)
+                                    if os.path.isfile(file_path):
+                                        os.unlink(file_path)
+                            
+                            logger.info(f"clear_tales: {tale_id} ID'li {tale_type} masalı silindi")
+                    except Exception as e:
+                        logger.error(f"clear_tales: Masal silinirken hata: {e}")
         
         return jsonify({'success': True, 'message': 'Masallar başarıyla temizlendi'})
     
@@ -512,15 +537,12 @@ def clear_tales():
 @app.route('/load_tale/<tale_id>')
 def load_tale(tale_id):
     try:
-        tale_type = request.args.get('type', 'history')  # 'history' veya 'favorites'
+        tale_type = request.args.get('type', 'history')  # 'history' veya 'favorites' (artık sadece bilgi amaçlı)
         
-        logger.info(f"load_tale: {tale_type} tipindeki masal {tale_id} yükleniyor")
+        logger.info(f"load_tale: Masal {tale_id} yükleniyor (istenen tip: {tale_type})")
         
-        # Dizini belirle
-        if tale_type == 'favorites':
-            directory = 'static/tales/favorites'
-        else:
-            directory = 'static/tales/history'
+        # Tek klasör kullan
+        directory = 'static/tales/all'
         
         # JSON dosyasını oku
         json_file = f"{directory}/{tale_id}.json"
@@ -534,8 +556,13 @@ def load_tale(tale_id):
         
         logger.info(f"load_tale: Masal JSON verisi yüklendi: {tale_data.get('title', 'Başlıksız')}")
         
-        # Masal türünü ekle
-        tale_data['type'] = tale_type
+        # Tale data içinde zaten type var, olmasa bile alalım
+        data_type = tale_data.get('type', tale_type) 
+        tale_data['type'] = data_type
+        
+        # Favori durumunu belirt
+        is_favorite = tale_data.get('isFavorite', False) or data_type == 'favorites'
+        tale_data['isFavorite'] = is_favorite
         
         # Masala ait görselleri bul
         tale_data['pages'] = []

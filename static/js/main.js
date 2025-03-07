@@ -586,7 +586,9 @@ document.addEventListener('DOMContentLoaded', function() {
             setting: document.getElementById('setting').value || '',
             theme: document.getElementById('theme').value || '',
             data: tale,
-            date: new Date().toISOString()
+            date: new Date().toISOString(),
+            type: 'history',
+            isFavorite: false // Yeni oluşturulan hikayeler favorilere başlangıçta eklenmiş değil
         };
         
         console.log("Yeni masal geçmişe ekleniyor:", newTale.title);
@@ -1171,6 +1173,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setting: favorite.setting || '',
             theme: favorite.theme || '',
             type: 'favorites',
+            isFavorite: true,
             pages: []
         };
         
@@ -2447,7 +2450,8 @@ document.addEventListener('DOMContentLoaded', function() {
             taleData = {
                 tale_title: tale.title || "Masal",
                 tale_text: tale.text,
-                image_url: tale.image
+                image_url: tale.image,
+                isFavorite: tale.isFavorite || false
             };
         }
         
@@ -2457,9 +2461,15 @@ document.addEventListener('DOMContentLoaded', function() {
             favoriteButton.disabled = false;
             
             // Mevcut masal favori mi kontrol et ve butonunu güncelle
-            const isFavorite = taleFavorites.some(fav => 
-                (fav.id && tale.id && fav.id === tale.id) || 
-                (fav.title && tale.title && fav.title === tale.title));
+            // Önce isFavorite özelliğine bak, yoksa liste içinde ara
+            let isFavorite = taleData.isFavorite;
+            
+            if (!isFavorite) {
+                // Eski yöntem ile de kontrol et
+                isFavorite = taleFavorites.some(fav => 
+                    (fav.id && tale.id && fav.id === tale.id) || 
+                    (fav.title && tale.title && fav.title === tale.title));
+            }
             
             favoriteButton.innerHTML = isFavorite ? 
                 '<i class="fas fa-heart"></i> Favorilerden Çıkar' : 
@@ -2537,7 +2547,8 @@ document.addEventListener('DOMContentLoaded', function() {
         taleData = {
             tale_title: serverTale.title,
             tale_text: serverTale.text,
-            image_url: serverTale.image_url
+            image_url: serverTale.image_url,
+            isFavorite: serverTale.isFavorite || false
         };
         
         // Favorilere ekleme butonunu ayarla
@@ -2546,7 +2557,8 @@ document.addEventListener('DOMContentLoaded', function() {
             favoriteButton.disabled = false;
             
             // Mevcut masal favori mi kontrol et
-            const isFavorite = serverTale.type === 'favorites';
+            const isFavorite = serverTale.isFavorite || serverTale.type === 'favorites';
+            taleData.isFavorite = isFavorite;
             
             favoriteButton.innerHTML = isFavorite ? 
                 '<i class="fas fa-heart"></i> Favorilerden Çıkar' : 
