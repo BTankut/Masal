@@ -13,6 +13,7 @@ Masal, çocuklar için yapay zeka destekli bir hikaye oluşturma platformudur. U
 - **Ses Kontrolü**: Durdurma, devam ettirme, hız kontrolü ve ilerleme çubuğu
 - **Kolay Kayıt**: Masalları Word dosyası olarak kaydetme imkanı
 - **Favoriler Sistemi**: Beğenilen masalları kaydetme ve tekrar erişme
+- **Hibrit Depolama**: Masallar hem tarayıcıda hem sunucuda depolanır, offline kullanıma destek sağlar
 
 ### Kullanıcı Deneyimi
 - **Çocuk Dostu Arayüz**: Kolay kullanılabilir, renkli ve sezgisel tasarım
@@ -107,8 +108,11 @@ masal/
 │   ├── js/
 │   │   └── main.js         # Frontend fonksiyonları
 │   ├── img/                # Statik görseller
+│   ├── test_images/        # Test görselleri klasörü
 │   └── tales/              # Sunucuda saklanan masal verileri
-│       └── all/            # Tüm masallar için JSON, görsel, ses dosyaları
+│       ├── all/            # Tüm masallar için JSON, görsel, ses dosyaları
+│       ├── history/        # (Eski sistem) Geçmiş masallar
+│       └── favorites/      # (Eski sistem) Favori masallar
 └── templates/
     ├── index.html          # Ana uygulama şablonu
     └── debug.html          # Debug ve veri yönetimi sayfası
@@ -154,10 +158,19 @@ python test_prompt_length.py --counts 200 500 --api both  # Her iki API için be
   - Tüm verileri temizleme (localStorage ve sunucu)
   - Veri senkronizasyonu sorunlarını tespit etme
 
+## Test Araçları
+
+- `test_prompt_length.py`: Prompt formüllerini ve kelime sayısı doğruluğunu test eder
+- `test_gemini.py` ve `test_openai.py`: API bağlantılarını ve model yanıtlarını test eder
+- `test_dalle2.py`: DALL-E 2 görsel üretimini test eder
+- `test_dalle2_styles.py`: DALL-E 2 için çeşitli stil promptlarını test eder
+
 ## Performans Hususları
 
 - **API Kullanımı**: API sınırlamalarına ve maliyetlerine dikkat edin
-  - DALL-E 3: Dakikada 5 görsel istek limiti (uygulama otomatik olarak hız sınırlaması yapar)
+  - DALL-E: Dakikada 5 görsel istek limiti (uygulama otomatik olarak hız sınırlaması yapar)
+    - DALL-E 3: 1024x1024 veya 1792x1024 çözünürlükleri destekler
+    - DALL-E 2: 256x256, 512x512, 1024x1024 çözünürlükleri destekler
   - OpenAI modelleri: GPT-4o-mini-2024-07-18 (ilk deneme), GPT-4-turbo-2024-04-09 (yeniden deneme)
   - Token limiti: max_tokens = min(4000, word_limit * 10)
 - **Görsel Oluşturma**: Sayfa görsellerinin oluşturulması için 5-15 saniye bekleyin
@@ -168,7 +181,8 @@ python test_prompt_length.py --counts 200 500 --api both  # Her iki API için be
     - Masal geçmişi: Son 5 oluşturulan masal otomatik kaydedilir (`taleHistory`)
     - Favoriler: En fazla 5 masal favorilere eklenebilir (`taleFavorites`)
   - **Sunucu Depolama**:
-    - `/static/tales/all/` klasöründe tüm masallar tek bir yerde depolanır
+    - `/static/tales/all/` klasöründe tüm masallar tek bir yerde depolanır (yeni sistem)
+    - JSON içinde `type` ve `isFavorite` alanlarıyla masalların türü belirlenir
     - Her masal için JSON, görsel ve ses dosyaları saklanır
     - Offline kullanım için veriler tarayıcıda ve sunucuda kaydedilir
   - **Önbellekleme Stratejisi**:
