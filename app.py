@@ -452,7 +452,7 @@ def list_tales():
                     'characterName': tale_data.get('characterName', ''),
                     'characterType': tale_data.get('characterType', ''),
                     'has_image': has_image,
-                    'image_url': f'/{image_path}' if has_image else None,
+                    'image_url': image_path if has_image else None,
                     'page_count': len(page_files),
                     'has_audio': len(audio_files) > 0,
                     'has_page_images': len(page_image_files) > 0,
@@ -570,7 +570,7 @@ def load_tale(tale_id):
         # Ana görsel
         image_path = f"{directory}/{tale_id}_image.jpg"
         if os.path.exists(image_path):
-            tale_data['image_url'] = f'/{image_path}'
+            tale_data['image_url'] = image_path
             logger.info(f"load_tale: Ana görsel bulundu: {image_path}")
         else:
             logger.warning(f"load_tale: Ana görsel bulunamadı: {image_path}")
@@ -591,14 +591,14 @@ def load_tale(tale_id):
                 page_image = f"{directory}/{tale_id}_page_{page_idx}_image.jpg"
                 page_image_url = None
                 if os.path.exists(page_image):
-                    page_image_url = f'/{page_image}'
+                    page_image_url = page_image
                     logger.debug(f"load_tale: Sayfa {page_idx} için görsel bulundu")
                 
                 # Sayfa ses dosyası
                 page_audio = f"{directory}/{tale_id}_page_{page_idx}_audio.mp3"
                 page_audio_url = None
                 if os.path.exists(page_audio):
-                    page_audio_url = f'/{page_audio}'
+                    page_audio_url = page_audio
                     logger.debug(f"load_tale: Sayfa {page_idx} için ses dosyası bulundu")
                 
                 # Sayfa bilgilerini ekle
